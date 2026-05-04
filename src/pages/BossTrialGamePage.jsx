@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import NeonButton from '../components/ui/NeonButton.jsx'
 import CombatRenderer from '../features/game/CombatRenderer.jsx'
 import QuestionStage from '../features/game/QuestionStage.jsx'
+import SessionReviewView from '../features/game/SessionReviewView.jsx'
 import { useBossTrialGame } from '../features/game/hooks/useBossTrialGame.js'
 import { mockProfile } from '../data/mockUser.js'
 import { generateSessionId } from '../game/sessionId.js'
@@ -13,8 +14,11 @@ function SessionOutcome({
   phase,
   roninHp,
   bossHp,
+  correctCount,
+  totalQuestions,
   onReplay,
   onExit,
+  onReviewChallenge,
 }) {
   const margin = Math.abs(roninHp - bossHp)
   const won =
@@ -75,6 +79,13 @@ function SessionOutcome({
         <p className="mt-3 text-xs text-ronin-gold">
           HP margin: {margin} · Ronin {roninHp} / Boss {bossHp}
         </p>
+        <p className="mt-5 text-center font-display">
+          <span className="text-2xl font-bold text-white">You Answered: </span>
+          <span className={`text-2xl font-bold ${lost ? 'text-red-500' : 'text-emerald-400'}`}>
+            {correctCount}/{totalQuestions}
+          </span>
+          <span className="text-2xl font-bold text-white"> correctly</span>
+        </p>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-black/45 p-4">
@@ -104,6 +115,13 @@ function SessionOutcome({
         </NeonButton>
         <button
           type="button"
+          className="rounded-xl bg-zinc-950 px-5 py-2 text-sm font-semibold text-white ring-1 ring-white/15 hover:bg-zinc-900"
+          onClick={onReviewChallenge}
+        >
+          Review challenge
+        </button>
+        <button
+          type="button"
           className="rounded-xl border border-white/10 px-5 py-2 text-sm text-ronin-muted hover:bg-white/5"
           onClick={onExit}
         >
@@ -121,10 +139,15 @@ export default function BossTrialGamePage() {
   const userId = user?.uid ?? 'guest'
   const game = useBossTrialGame({ userId, sessionId })
   const answeredRef = useRef(/** @type {string | null} */ (null))
+  const [sessionReviewOpen, setSessionReviewOpen] = useState(false)
 
   useEffect(() => {
     answeredRef.current = null
   }, [game.index, game.current?.id])
+
+  useEffect(() => {
+    if (game.phase === 'playing') setSessionReviewOpen(false)
+  }, [game.phase])
 
   const busy = game.animBusy || game.phase !== 'playing'
 
@@ -197,16 +220,20 @@ export default function BossTrialGamePage() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-            {ended ? (
+          <div className="relative min-h-0 flex-1 overflow-y-auto pr-1">
+            {ended && !sessionReviewOpen ? (
               <SessionOutcome
                 phase={game.phase}
                 roninHp={game.roninHp}
                 bossHp={game.bossHp}
+                correctCount={game.correctCount}
+                totalQuestions={game.totalQuestions}
                 onReplay={() => window.location.reload()}
                 onExit={() => navigate('/dashboard')}
+                onReviewChallenge={() => setSessionReviewOpen(true)}
               />
-            ) : (
+            ) : null}
+            {!ended ? (
               <QuestionStage
                 key={game.current?.id ?? 'none'}
                 question={game.current}
@@ -220,7 +247,7 @@ export default function BossTrialGamePage() {
                   void game.applyAnswer(false)
                 }}
               />
-            )}
+            ) : null}
           </div>
         </section>
 
@@ -233,6 +260,10 @@ export default function BossTrialGamePage() {
           />
         </section>
       </div>
+
+      {ended && sessionReviewOpen && game.questions ? (
+        <SessionReviewView questions={game.questions} onClose={() => setSessionReviewOpen(false)} />
+      ) : null}
     </div>
   )
 }

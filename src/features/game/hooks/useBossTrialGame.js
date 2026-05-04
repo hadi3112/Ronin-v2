@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CombatVisualState, runCombatExchange } from '../../../game/CombatStateMachine.js'
 import { loadBossTrialSession } from '../../../game/CourseLoader.js'
 import { GameEngine } from '../../../game/GameEngine.js'
+import { QUESTION_ENGINE } from '../../../game/QuestionEngine.js'
 import { defaultFirebaseService } from '../../../services/FirebaseService.js'
 
 /**
@@ -13,6 +14,7 @@ export function useBossTrialGame(ids) {
   const [loadState, setLoadState] = useState(/** @type {'loading'|'ready'|'error'} */ ('loading'))
   const [loadError, setLoadError] = useState(/** @type {string | null} */ (null))
   const [questions, setQuestions] = useState(/** @type {object[] | null} */ (null))
+  const [correctCount, setCorrectCount] = useState(0)
 
   const engineRef = useRef(/** @type {GameEngine | null} */ (null))
   const [roninHp, setRoninHp] = useState(100)
@@ -31,6 +33,7 @@ export function useBossTrialGame(ids) {
         if (cancelled) return
         engineRef.current = new GameEngine(q)
         setQuestions(q)
+        setCorrectCount(0)
         setRoninHp(engineRef.current.roninHp)
         setBossHp(engineRef.current.bossHp)
         setIndex(engineRef.current.index)
@@ -53,6 +56,8 @@ export function useBossTrialGame(ids) {
     async (isCorrect) => {
       const eng = engineRef.current
       if (!eng || eng.phase !== 'playing' || animBusy) return
+
+      if (isCorrect) setCorrectCount((c) => c + 1)
 
       abortRef.current?.abort()
       abortRef.current = new AbortController()
@@ -116,5 +121,7 @@ export function useBossTrialGame(ids) {
     animBusy,
     questionLabel,
     applyAnswer,
+    correctCount,
+    totalQuestions: QUESTION_ENGINE.SESSION_TOTAL,
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CombatVisualState } from '../../game/CombatStateMachine.js'
+import { CombatVisualState, COMBAT_TIMINGS_MS } from '../../game/CombatStateMachine.js'
 
 const RONIN_IMG = '/images/mascot_img.png'
 const BOSS_IMG = '/images/samurai_red.png'
@@ -8,10 +8,22 @@ const RONIN_FALLBACK = '/images/ronin-mascot.png'
 const RONIN_SWORD = '/images/ronin_sword.png'
 const REDS_SWORD = '/images/reds_sword.png'
 
+const RONIN_STRIKE_STATES = [
+  CombatVisualState.RONIN_STRIKE_1,
+  CombatVisualState.RONIN_STRIKE_2,
+  CombatVisualState.RONIN_STRIKE_3,
+  CombatVisualState.RONIN_STRIKE_4,
+  CombatVisualState.RONIN_STRIKE_5,
+  CombatVisualState.RONIN_STRIKE_6,
+]
+
 const RONIN_SLASHES = [
   'M 8 72 Q 58 18 112 58',
   'M 12 68 Q 62 22 108 52',
   'M 6 76 Q 54 14 114 62',
+  'M 10 70 Q 60 20 110 56',
+  'M 14 64 Q 64 24 106 50',
+  'M 4 78 Q 52 16 116 60',
 ]
 
 const BOSS_SLASHES = [
@@ -20,27 +32,21 @@ const BOSS_SLASHES = [
   'M 110 14 Q 56 102 12 108',
 ]
 
+const RONIN_SWING_SEC = COMBAT_TIMINGS_MS.RONIN_STRIKE_BEAT / 1000
+
 function hpFillPercent(current, max) {
   if (max <= 0) return 0
   if (current >= max) return 100
   return Math.max(0, Math.min(100, Math.round((current / max) * 1000) / 10))
 }
 
-function StrikeSword({
-  side,
-  visualState,
-  strikeBeat,
-}) {
+function StrikeSword({ side, visualState, strikeBeat }) {
   const isRonin = side === 'ronin'
   const src = isRonin ? RONIN_SWORD : REDS_SWORD
   const show =
     strikeBeat != null &&
     (isRonin
-      ? [
-          CombatVisualState.RONIN_STRIKE_1,
-          CombatVisualState.RONIN_STRIKE_2,
-          CombatVisualState.RONIN_STRIKE_3,
-        ].includes(visualState)
+      ? RONIN_STRIKE_STATES.includes(visualState)
       : [
           CombatVisualState.BOSS_OVERHEAD_1,
           CombatVisualState.BOSS_OVERHEAD_2,
@@ -48,7 +54,6 @@ function StrikeSword({
         ].includes(visualState))
 
   const baseDeg = -30
-  /** Ronin: CCW 30° then CW 60°. Boss (base CCW 30°): CW 30° then CCW 60°. */
   const swing = isRonin ? [baseDeg, baseDeg - 30, baseDeg + 30] : [baseDeg, baseDeg + 30, baseDeg - 30]
 
   const pos =
@@ -58,22 +63,40 @@ function StrikeSword({
 
   if (!show) return null
 
-  return (
+  const swingDur = isRonin ? RONIN_SWING_SEC : COMBAT_TIMINGS_MS.STRIKE_BEAT / 1000
+
+  const inner = (
     <motion.img
       key={`${side}-sword-${visualState}`}
       src={src}
       alt=""
-      className={`pointer-events-none absolute h-[72%] w-auto max-w-[none] object-contain drop-shadow-[0_0_8px_rgba(0,0,0,0.85)] ${
+      className={`pointer-events-none h-[72%] w-auto max-w-[none] object-contain drop-shadow-[0_0_8px_rgba(0,0,0,0.85)] ${
         !isRonin ? 'drop-shadow-[0_0_14px_rgba(255,23,68,0.9)]' : ''
       }`}
       style={{
-        ...pos,
         transformOrigin: isRonin ? '80% 85%' : '20% 85%',
       }}
       initial={{ rotate: baseDeg, opacity: 1 }}
       animate={{ rotate: swing, opacity: 1 }}
-      transition={{ duration: 0.104, ease: 'easeInOut' }}
+      transition={{ duration: swingDur, ease: 'easeInOut' }}
     />
+  )
+
+  if (isRonin) {
+    return (
+      <div
+        className="pointer-events-none absolute z-[2]"
+        style={{ ...pos, transform: 'translateX(50px)' }}
+      >
+        {inner}
+      </div>
+    )
+  }
+
+  return (
+    <div className="pointer-events-none absolute z-[2]" style={pos}>
+      {inner}
+    </div>
   )
 }
 
@@ -84,9 +107,7 @@ function SpriteFigure({ side, imgSrc, fallbackSrc, visualState, isKo }) {
 
   const roninAttacking =
     visualState === CombatVisualState.RONIN_DASH ||
-    visualState === CombatVisualState.RONIN_STRIKE_1 ||
-    visualState === CombatVisualState.RONIN_STRIKE_2 ||
-    visualState === CombatVisualState.RONIN_STRIKE_3 ||
+    RONIN_STRIKE_STATES.includes(visualState) ||
     visualState === CombatVisualState.BOSS_HIT_STAGGER
 
   const roninReturning = visualState === CombatVisualState.RONIN_DASH_BACK
@@ -118,14 +139,12 @@ function SpriteFigure({ side, imgSrc, fallbackSrc, visualState, isKo }) {
 
   const strikeBeat = (() => {
     if (isRonin) {
-      if (visualState === CombatVisualState.RONIN_STRIKE_1) return 0
-      if (visualState === CombatVisualState.RONIN_STRIKE_2) return 1
-      if (visualState === CombatVisualState.RONIN_STRIKE_3) return 2
-    } else {
-      if (visualState === CombatVisualState.BOSS_OVERHEAD_1) return 0
-      if (visualState === CombatVisualState.BOSS_OVERHEAD_2) return 1
-      if (visualState === CombatVisualState.BOSS_OVERHEAD_3) return 2
+      const i = RONIN_STRIKE_STATES.indexOf(visualState)
+      return i >= 0 ? i : null
     }
+    if (visualState === CombatVisualState.BOSS_OVERHEAD_1) return 0
+    if (visualState === CombatVisualState.BOSS_OVERHEAD_2) return 1
+    if (visualState === CombatVisualState.BOSS_OVERHEAD_3) return 2
     return null
   })()
 
@@ -138,6 +157,7 @@ function SpriteFigure({ side, imgSrc, fallbackSrc, visualState, isKo }) {
 
   const slashPath = strikeRonin ? RONIN_SLASHES[strikeBeat] : strikeBoss ? BOSS_SLASHES[strikeBeat] : null
   const slashKey = `${side}-slash-${visualState}`
+  const slashDrawSec = strikeRonin ? Math.min(0.32, RONIN_SWING_SEC * 0.95) : 0.2
 
   const showSwordIdle = isRonin && (visualState === CombatVisualState.RONIN_DASH || visualState === CombatVisualState.RONIN_DASH_BACK)
   const showSwordIdleBoss =
@@ -168,7 +188,7 @@ function SpriteFigure({ side, imgSrc, fallbackSrc, visualState, isKo }) {
           idle
             ? { duration: 2.8, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }
             : strikeRonin || strikeBoss
-              ? { duration: 0.28, ease: 'easeOut' }
+              ? { duration: Math.max(0.32, RONIN_SWING_SEC), ease: 'easeOut' }
               : { duration: 0.35, ease: 'easeInOut' }
         }
       >
@@ -189,12 +209,14 @@ function SpriteFigure({ side, imgSrc, fallbackSrc, visualState, isKo }) {
           </div>
 
           {showSwordIdle ? (
-            <img
-              src={RONIN_SWORD}
-              alt=""
-              className="pointer-events-none absolute -right-1 top-[18%] z-[2] h-[72%] w-auto max-w-none object-contain"
-              style={{ transform: 'rotate(-30deg)', transformOrigin: '80% 85%' }}
-            />
+            <div className="pointer-events-none absolute -right-1 top-[18%] z-[2]" style={{ transform: 'translateX(50px)' }}>
+              <img
+                src={RONIN_SWORD}
+                alt=""
+                className="h-[72%] w-auto max-w-none object-contain"
+                style={{ transform: 'rotate(-30deg)', transformOrigin: '80% 85%' }}
+              />
+            </div>
           ) : null}
           {showSwordIdleBoss ? (
             <img
@@ -215,7 +237,7 @@ function SpriteFigure({ side, imgSrc, fallbackSrc, visualState, isKo }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: [0, 1, 0.85, 0] }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: slashDrawSec + 0.08 }}
                 viewBox="0 0 120 120"
               >
                 <defs>
@@ -233,7 +255,7 @@ function SpriteFigure({ side, imgSrc, fallbackSrc, visualState, isKo }) {
                   strokeLinecap="round"
                   initial={{ pathLength: 0, opacity: 0.95 }}
                   animate={{ pathLength: 1, opacity: [0.95, 1, 0] }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  transition={{ duration: slashDrawSec, ease: 'easeOut' }}
                 />
               </motion.svg>
             ) : null}
@@ -297,7 +319,7 @@ export default function CombatRenderer({ combatVisualState, roninHp, bossHp, max
 
         <div className="pointer-events-none absolute left-1/2 top-[40%] h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/10 bg-amber-300/5 blur-[3px]" />
 
-        <div className="flex min-h-[200px] w-[min(100%,11rem)] flex-col items-center gap-1 pt-10 md:w-48">
+        <div className="flex min-h-[200px] w-[min(100%,11rem)] flex-col items-center gap-0.5 md:w-48">
           <div className="w-full rounded-full border border-white/10 bg-black/55 px-2 py-1">
             <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
               <div
@@ -306,10 +328,10 @@ export default function CombatRenderer({ combatVisualState, roninHp, bossHp, max
               />
             </div>
           </div>
-          <div className="origin-bottom scale-[3] pb-2">
+          <div className="origin-bottom translate-y-10 scale-[3] pb-1">
             <SpriteFigure side="boss" imgSrc={BOSS_IMG} fallbackSrc={RONIN_FALLBACK} visualState={combatVisualState} isKo={bossKo} />
           </div>
-          <p className="text-[10px] uppercase tracking-[0.35em] text-ronin-muted">Samurai boss</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.35em] text-ronin-muted">SAMURAI BOSS</p>
         </div>
       </div>
     </motion.div>

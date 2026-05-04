@@ -1,6 +1,6 @@
 /**
  * Combat presentation + timing contract (drives UI; damage applies only after HIT_RESOLVE).
- * Sequence: dash → three strike beats → stagger → dash back → resolve damage.
+ * Ronin correct path: dash → six strike beats → stagger → dash back → resolve damage.
  */
 
 export const CombatVisualState = {
@@ -9,6 +9,9 @@ export const CombatVisualState = {
   RONIN_STRIKE_1: 'RONIN_STRIKE_1',
   RONIN_STRIKE_2: 'RONIN_STRIKE_2',
   RONIN_STRIKE_3: 'RONIN_STRIKE_3',
+  RONIN_STRIKE_4: 'RONIN_STRIKE_4',
+  RONIN_STRIKE_5: 'RONIN_STRIKE_5',
+  RONIN_STRIKE_6: 'RONIN_STRIKE_6',
   BOSS_HIT_STAGGER: 'BOSS_HIT_STAGGER',
   RONIN_DASH_BACK: 'RONIN_DASH_BACK',
   BOSS_DASH: 'BOSS_DASH',
@@ -22,10 +25,11 @@ export const CombatVisualState = {
   RONIN_KO: 'RONIN_KO',
 }
 
-/** Strike beats are 2× the original ~52ms cadence (slower slashes). */
 export const COMBAT_TIMINGS_MS = {
   DASH: 340,
   STRIKE_BEAT: 104,
+  /** Ronin slash beats: base beat + 100ms slower */
+  RONIN_STRIKE_BEAT: 204,
   STAGGER: 380,
   DASH_BACK: 340,
   KO: 1200,
@@ -50,28 +54,36 @@ function delay(ms, signal) {
 }
 
 /**
- * Runs one full exchange. Calls onVisualState during motion; calls applyDamage exactly once after dash-back; then optional KO.
  * @param {boolean} isCorrect
- * @param {{ onVisualState: (s: string) => void; applyDamage: () => { roninHp: number; bossHp: number; phase: string; index: number }; shouldRoninKO: () => boolean; shouldBossKO: () => boolean }} ops
+ * @param {{ onVisualState: (s: string) => void; applyDamage: () => object; shouldRoninKO: () => boolean; shouldBossKO: () => boolean }} ops
  * @param {AbortSignal} [signal]
  */
 export async function runCombatExchange(isCorrect, ops, signal) {
   const { onVisualState, applyDamage, shouldRoninKO, shouldBossKO } = ops
-  const b = COMBAT_TIMINGS_MS.STRIKE_BEAT
+  const bossBeat = COMBAT_TIMINGS_MS.STRIKE_BEAT
+  const roninBeat = COMBAT_TIMINGS_MS.RONIN_STRIKE_BEAT
+
+  const roninStrikeStates = [
+    CombatVisualState.RONIN_STRIKE_1,
+    CombatVisualState.RONIN_STRIKE_2,
+    CombatVisualState.RONIN_STRIKE_3,
+    CombatVisualState.RONIN_STRIKE_4,
+    CombatVisualState.RONIN_STRIKE_5,
+    CombatVisualState.RONIN_STRIKE_6,
+  ]
+
   const seq = isCorrect
     ? [
         [CombatVisualState.RONIN_DASH, COMBAT_TIMINGS_MS.DASH],
-        [CombatVisualState.RONIN_STRIKE_1, b],
-        [CombatVisualState.RONIN_STRIKE_2, b],
-        [CombatVisualState.RONIN_STRIKE_3, b],
+        ...roninStrikeStates.map((s) => [s, roninBeat]),
         [CombatVisualState.BOSS_HIT_STAGGER, COMBAT_TIMINGS_MS.STAGGER],
         [CombatVisualState.RONIN_DASH_BACK, COMBAT_TIMINGS_MS.DASH_BACK],
       ]
     : [
         [CombatVisualState.BOSS_DASH, COMBAT_TIMINGS_MS.DASH],
-        [CombatVisualState.BOSS_OVERHEAD_1, b],
-        [CombatVisualState.BOSS_OVERHEAD_2, b],
-        [CombatVisualState.BOSS_OVERHEAD_3, b],
+        [CombatVisualState.BOSS_OVERHEAD_1, bossBeat],
+        [CombatVisualState.BOSS_OVERHEAD_2, bossBeat],
+        [CombatVisualState.BOSS_OVERHEAD_3, bossBeat],
         [CombatVisualState.RONIN_HIT_STAGGER, COMBAT_TIMINGS_MS.STAGGER],
         [CombatVisualState.BOSS_DASH_BACK, COMBAT_TIMINGS_MS.DASH_BACK],
       ]

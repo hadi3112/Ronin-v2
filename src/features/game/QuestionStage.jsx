@@ -3,7 +3,7 @@ import ConceptualMode from './question-renderers/ConceptualMode.jsx'
 import StacktraceMode from './question-renderers/StacktraceMode.jsx'
 import SystemPuzzles from './question-renderers/SystemPuzzles.jsx'
 
-export default function QuestionStage({ question, disabled, onMcq, onSystem, onTraceTimeout }) {
+export default function QuestionStage({ question, disabled, onMcq, onSystem, onTraceTimeout, reviewMode }) {
   if (!question) return null
 
   if (question.bankType === 'stacktrace') {
@@ -13,6 +13,7 @@ export default function QuestionStage({ question, disabled, onMcq, onSystem, onT
         disabled={disabled}
         onAnswer={onMcq}
         onTimeout={onTraceTimeout}
+        reviewMode={reviewMode}
       />
     )
   }
