@@ -1,3 +1,23 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@config '../tailwind.config.js';
+
+@layer base {
+  html {
+    @apply antialiased scroll-smooth;
+  }
+  body {
+    @apply min-h-screen bg-ronin-void text-ronin-cream font-sans;
+    background-image: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(61, 16, 21, 0.45), transparent),
+      radial-gradient(ellipse 80% 50% at 100% 50%, rgba(243, 50, 50, 0.06), transparent);
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
