@@ -6,11 +6,29 @@ import TutorialModal from './TutorialModal.jsx'
 export default function TutorialsHighwayPanel() {
   const [active, setActive] = useState(null)
   const loop = useMemo(() => [...mockTutorialClusters, ...mockTutorialClusters, ...mockTutorialClusters], [])
+  const quickSix = useMemo(() => mockTutorialClusters.flatMap((cluster) => cluster.nodes).slice(0, 6), [])
 
   return (
     <div className="relative">
+      <div className="mb-5 grid gap-3 md:grid-cols-3">
+        {quickSix.map((node) => (
+          <button
+            key={`quick-${node.id}`}
+            type="button"
+            onClick={() => setActive(node)}
+            className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-left text-sm text-ronin-cream transition hover:border-ronin-coral/45"
+          >
+            <p className="font-semibold">{node.title}</p>
+            <p className="text-[11px] text-ronin-muted">{node.difficulty}</p>
+          </button>
+        ))}
+      </div>
       <div className="pointer-events-none absolute inset-x-0 top-10 h-px bg-gradient-to-r from-transparent via-ronin-crimson/40 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-16 h-px bg-gradient-to-r from-transparent via-ronin-gold/30 to-transparent" />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-20"
+        style={{ backgroundImage: "url('/images/tech-line.png')", backgroundSize: '280px auto', backgroundRepeat: 'repeat' }}
+      />
 
       <div className="flex gap-6 overflow-x-auto pb-10 pt-8 scrollbar-hide">
         {loop.map((cluster, idx) => (

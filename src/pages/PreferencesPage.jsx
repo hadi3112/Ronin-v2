@@ -1,40 +1,33 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Check } from 'lucide-react'
+import { ArrowRight, Check, Search } from 'lucide-react'
 import AmbientGrid from '../components/layout/AmbientGrid.jsx'
-import GlassCard from '../components/ui/GlassCard.jsx'
 import NeonButton from '../components/ui/NeonButton.jsx'
-import RoninMark from '../components/branding/RoninMark.jsx'
 import { useAuth } from '../hooks/useAuth.js'
+import appicon from '../assets/appicon.png'
+import mascot from '../assets/mascot.png'
 
-const interests = [
-  'Python',
-  'C++',
-  'Web Dev',
-  'AI / ML',
-  'Android',
-  'Blockchain',
-  'Game Dev',
-  'Embedded Systems',
-]
-
+const interests = ['HTML', 'Machine Learning', 'JavaScript', 'C++', 'CSS', 'Rust', 'Python 3.0', 'Java', 'Solidity']
 const skills = ['Beginner', 'Intermediate', 'Advanced']
 const styles = ['Tutorial heavy', 'Challenge heavy', 'Balanced']
+const contentModes = ['Video based learning', 'Code samples + puzzles', 'Flashcards']
 
-function Chip({ active, children, onClick }) {
+function Chip({ active, children, onClick, color = 'red' }) {
+  const palette = {
+    red: active ? 'bg-ronin-crimson/80 border-ronin-coral text-white' : 'bg-white/10 border-white/10 text-ronin-cream',
+    warm: active ? 'bg-amber-500/70 border-amber-300 text-black' : 'bg-amber-500/20 border-amber-300/40 text-amber-100',
+    blue: active ? 'bg-sky-500/80 border-sky-200 text-black' : 'bg-sky-500/20 border-sky-300/35 text-sky-100',
+    green: active ? 'bg-emerald-500/80 border-emerald-200 text-black' : 'bg-emerald-500/20 border-emerald-300/35 text-emerald-100',
+  }
+
   return (
     <motion.button
       type="button"
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className={[
-        'rounded-xl border px-3 py-2 text-xs font-medium transition-colors md:text-sm',
-        active
-          ? 'border-ronin-crimson/60 bg-ronin-crimson/20 text-ronin-cream shadow-ronin-red'
-          : 'border-white/10 bg-black/30 text-ronin-muted hover:border-white/20',
-      ].join(' ')}
+      className={['rounded-xl border px-3 py-2 text-xs font-semibold transition-colors md:text-sm', palette[color]].join(' ')}
     >
       {children}
     </motion.button>
@@ -44,18 +37,21 @@ function Chip({ active, children, onClick }) {
 export default function PreferencesPage() {
   const navigate = useNavigate()
   const { savePreferences } = useAuth()
-  const [selected, setSelected] = useState(() => new Set(['Web Dev', 'Python']))
+  const [selected, setSelected] = useState(() => new Set(['JavaScript', 'C++']))
   const [skill, setSkill] = useState('Intermediate')
   const [learningStyle, setLearningStyle] = useState('Balanced')
+  const [selectedModes, setSelectedModes] = useState(() => new Set(['Video based learning']))
+  const [search, setSearch] = useState('')
 
-  const canContinue = useMemo(() => selected.size > 0 && Boolean(skill) && Boolean(learningStyle), [
-    selected,
-    skill,
-    learningStyle,
-  ])
+  const canContinue = useMemo(
+    () => selected.size > 0 && Boolean(skill) && Boolean(learningStyle) && selectedModes.size > 0,
+    [selected, skill, learningStyle, selectedModes],
+  )
 
-  function toggleInterest(label) {
-    setSelected((prev) => {
+  const filteredInterests = interests.filter((item) => item.toLowerCase().includes(search.toLowerCase()))
+
+  function toggleSetItem(setter, label) {
+    setter((prev) => {
       const next = new Set(prev)
       if (next.has(label)) next.delete(label)
       else next.add(label)
@@ -69,67 +65,104 @@ export default function PreferencesPage() {
       interests: [...selected],
       skill,
       learningStyle,
+      contentModes: [...selectedModes],
     })
     navigate('/dashboard', { replace: true })
   }
 
   return (
-    <div className="relative min-h-screen px-4 py-12 md:px-10">
+    <div className="relative min-h-screen overflow-hidden px-4 py-10 md:px-10">
       <AmbientGrid />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(243,50,50,0.12),transparent_40%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_85%,rgba(243,50,50,0.14),transparent_40%),radial-gradient(circle_at_85%_22%,rgba(243,139,31,0.08),transparent_35%)]" />
 
-      <div className="relative z-10 mx-auto max-w-4xl space-y-8">
-        <RoninMark size="md" />
-
-        <GlassCard className="p-8 md:p-10">
-          <header className="mb-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-ronin-gold">Phase 02</p>
-            <h1 className="mt-2 font-display text-3xl font-bold text-ronin-cream">Forge your curriculum</h1>
-            <p className="mt-2 text-sm text-ronin-muted">
-              Interests tune recommendations. Skill and learning style calibrate pacing and challenge density.
+      <div className="relative z-10 mx-auto max-w-6xl rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-ronin backdrop-blur-xl md:p-10">
+        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <section>
+            <h1 className="max-w-md text-4xl font-bold leading-tight text-ronin-cream md:text-5xl">
+              Let&apos;s personalize your preferences
+            </h1>
+            <p className="mt-3 max-w-xl text-base text-ronin-muted">
+              Select tech stacks and learning styles to shape your home page and challenge path.
             </p>
-          </header>
 
-          <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-ronin-muted">Choose interests</h2>
-            <div className="flex flex-wrap gap-2">
-              {interests.map((label) => (
-                <Chip key={label} active={selected.has(label)} onClick={() => toggleInterest(label)}>
-                  {selected.has(label) && <Check className="mr-1 inline h-3.5 w-3.5" />}
-                  {label}
-                </Chip>
-              ))}
+            <label className="relative mt-6 block max-w-lg">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ronin-muted" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search..."
+                className="w-full rounded-2xl border border-white/10 bg-white/90 py-3 pl-10 pr-4 text-sm text-black outline-none ring-2 ring-transparent transition focus:ring-ronin-coral/45"
+              />
+            </label>
+
+            <div className="mt-6 space-y-6">
+              <div>
+                <p className="mb-3 text-sm font-semibold text-ronin-muted">Suggested</p>
+                <div className="flex flex-wrap gap-2">
+                  {filteredInterests.map((label, i) => {
+                    const colors = ['green', 'warm', 'blue', 'warm', 'blue', 'red', 'warm', 'red', 'blue']
+                    return (
+                      <Chip key={label} active={selected.has(label)} onClick={() => toggleSetItem(setSelected, label)} color={colors[i % colors.length]}>
+                        {selected.has(label) && <Check className="mr-1 inline h-3.5 w-3.5" />}
+                        {label}
+                      </Chip>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-3 text-sm font-semibold text-ronin-muted">Skill level</p>
+                <div className="flex flex-wrap gap-2">
+                  {skills.map((item) => (
+                    <Chip key={item} active={skill === item} onClick={() => setSkill(item)}>
+                      {item}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-3 text-sm font-semibold text-ronin-muted">Learning style</p>
+                <div className="flex flex-wrap gap-2">
+                  {styles.map((item) => (
+                    <Chip key={item} active={learningStyle === item} onClick={() => setLearningStyle(item)}>
+                      {item}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-3 text-sm font-semibold text-ronin-muted">Content focus</p>
+                <div className="flex flex-wrap gap-2">
+                  {contentModes.map((item) => (
+                    <Chip key={item} active={selectedModes.has(item)} onClick={() => toggleSetItem(setSelectedModes, item)}>
+                      {selectedModes.has(item) && <Check className="mr-1 inline h-3.5 w-3.5" />}
+                      {item}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
 
-          <section className="mt-8 space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-ronin-muted">Select skill</h2>
-            <div className="grid gap-2 md:grid-cols-3">
-              {skills.map((s) => (
-                <Chip key={s} active={skill === s} onClick={() => setSkill(s)}>
-                  {s}
-                </Chip>
-              ))}
-            </div>
+          <section className="relative flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-black/20 p-6">
+            <img src={appicon} alt=".Ronin icon" className="h-28 w-28 object-contain" />
+            <img src={mascot} alt="Ronin mascot" className="mt-4 h-64 w-48 object-contain drop-shadow-[0_0_22px_rgba(243,50,50,0.35)]" />
+            <p className="mt-3 text-center text-sm text-ronin-muted">Build your dojo path: code, challenge, master.</p>
           </section>
+        </div>
 
-          <section className="mt-8 space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-ronin-muted">Learning style</h2>
-            <div className="grid gap-2 md:grid-cols-3">
-              {styles.map((s) => (
-                <Chip key={s} active={learningStyle === s} onClick={() => setLearningStyle(s)}>
-                  {s}
-                </Chip>
-              ))}
-            </div>
-          </section>
-
-          <div className="mt-10 flex justify-end">
-            <NeonButton type="button" disabled={!canContinue} onClick={handleContinue}>
-              Continue to dashboard
-            </NeonButton>
+        <div className="mt-8 flex items-center justify-center gap-4">
+          <div className="h-1.5 w-28 rounded-full bg-white/20">
+            <div className="h-full w-1/2 rounded-full bg-black" />
           </div>
-        </GlassCard>
+          <NeonButton type="button" variant="coral" disabled={!canContinue} onClick={handleContinue} className="min-w-44 rounded-2xl py-3 text-lg">
+            Done
+            <ArrowRight className="h-4 w-4" />
+          </NeonButton>
+        </div>
       </div>
     </div>
   )

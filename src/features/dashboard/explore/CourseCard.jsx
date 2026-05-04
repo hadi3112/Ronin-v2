@@ -13,9 +13,14 @@ export default function CourseCard({ course, onOpen }) {
         whileHover={{ scale: 1.12 }}
         transition={{ type: 'spring', stiffness: 260, damping: 18 }}
       >
-        <div
-          className={`relative h-32 bg-gradient-to-br md:h-36 ${course.accent ?? 'from-ronin-crimson/35 to-black'}`}
-        />
+        {course.image ? (
+          <img src={course.image} alt={course.title} className="h-32 w-full object-cover md:h-36" />
+        ) : (
+          <div
+            className={`relative h-32 bg-gradient-to-br md:h-36 ${course.accent ?? 'from-ronin-crimson/35 to-black'}`}
+          />
+        )}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/45 to-transparent" />
         <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
           <motion.div

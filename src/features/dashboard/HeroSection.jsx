@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
-import { Play, Sparkles, UserRound } from 'lucide-react'
+import { Play, Sparkles } from 'lucide-react'
 import { useId } from 'react'
 import NeonButton from '../../components/ui/NeonButton.jsx'
-import RoninMascot from '../../components/branding/RoninMascot.jsx'
 import { mockProfile } from '../../data/mockUser.js'
 import { useAuth } from '../../hooks/useAuth.js'
+import appicon from '../../assets/appicon.png'
+import mascot from '../../assets/mascot.png'
 
 function Ring({ pct }) {
   const gid = useId().replace(/:/g, '')
@@ -68,8 +69,8 @@ export default function HeroSection() {
             <div className="hidden text-right text-[10px] uppercase tracking-widest text-ronin-muted sm:block">
               Ronin XP
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-ronin-gold/40 bg-black/40 text-ronin-gold shadow-ronin-gold">
-              <UserRound className="h-6 w-6" />
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-ronin-gold/40 bg-black/40 shadow-ronin-gold">
+              <img src={appicon} alt="Ronin profile" className="h-8 w-8 object-contain" />
             </div>
           </div>
         </div>
@@ -168,7 +169,11 @@ export default function HeroSection() {
               </div>
             </motion.div>
 
-            <RoninMascot className="absolute -bottom-6 -right-2 z-10 scale-90 md:-right-6 md:scale-100" />
+            <img
+              src={mascot}
+              alt="Ronin mascot"
+              className="pointer-events-none absolute -bottom-6 -right-2 z-10 h-40 w-28 object-contain md:-right-6 md:h-48 md:w-32"
+            />
           </div>
         </div>
       </motion.article>

@@ -15,7 +15,7 @@ export default function DashboardTabs() {
 
   return (
     <section className="mt-10 space-y-6">
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
+      <div className="flex flex-wrap items-center justify-center gap-8 border-b border-white/10 pb-4">
         {tabs.map((t) => {
           const active = tab === t.id
           return (
@@ -24,7 +24,7 @@ export default function DashboardTabs() {
               type="button"
               onClick={() => setTab(t.id)}
               className={[
-                'relative rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
+                'relative rounded-lg px-5 py-2 text-sm font-semibold transition-colors',
                 active ? 'text-ronin-cream' : 'text-ronin-muted hover:text-ronin-cream',
               ].join(' ')}
             >

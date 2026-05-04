@@ -4,57 +4,73 @@ import { Cpu } from 'lucide-react'
 import { mockChallengeDetail, mockLevelNodes } from '../../../data/mockLevels.js'
 import ChallengeModal from './ChallengeModal.jsx'
 
-function CircuitConnector() {
-  return (
-    <div className="flex justify-center py-1">
-      <div className="relative h-14 w-px overflow-hidden rounded-full bg-gradient-to-b from-ronin-crimson/10 via-ronin-crimson to-ronin-crimson/10">
-        <motion.div
-          className="absolute inset-x-0 top-0 h-8 w-full bg-gradient-to-b from-transparent via-ronin-gold to-transparent opacity-80"
-          animate={{ y: ['-100%', '120%'] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
-        />
-      </div>
-    </div>
-  )
-}
-
 export default function LevelsCircuitPanel() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="relative mx-auto max-w-3xl space-y-0 pb-24">
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-40">
-        <svg className="h-full w-full" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="trace" x1="0" y1="0" x2="0" y2="1">
-              <stop stopColor="#F33232" stopOpacity="0" />
-              <stop offset="0.5" stopColor="#F33232" stopOpacity="0.5" />
-              <stop offset="1" stopColor="#F33232" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <motion.path
-            d="M 50 40 C 120 120 20 200 180 320"
-            stroke="url(#trace)"
-            strokeWidth="2"
-            fill="none"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 2.4, ease: 'easeInOut' }}
-          />
-        </svg>
+    <div className="relative mx-auto max-w-6xl space-y-6 pb-24">
+      <div className="mb-2 grid gap-3 md:grid-cols-3">
+        <div className="rounded-xl border border-white/10 bg-ronin-crimson/20 px-4 py-3 text-sm font-semibold text-ronin-cream">
+          Object Oriented Programming in C++
+        </div>
+        <div className="rounded-xl border border-white/10 bg-blue-500/20 px-4 py-3 text-sm font-semibold text-ronin-cream">
+          Python: Getting Started
+        </div>
+        <div className="rounded-xl border border-white/10 bg-amber-500/20 px-4 py-3 text-sm font-semibold text-ronin-cream">
+          HTML: Web 3.0
+        </div>
       </div>
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/45 p-5 md:p-8">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: "url('/images/tech-line.png')",
+            backgroundSize: '280px auto',
+            backgroundRepeat: 'repeat',
+          }}
+        />
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="text-2xl font-bold text-ronin-cream">
+            Current Track: <span className="rounded-full bg-ronin-crimson px-3 py-1 text-base">C++</span>
+          </h3>
+          <button type="button" className="text-sm font-semibold text-ronin-cream underline decoration-ronin-coral/50 underline-offset-4">
+            See All
+          </button>
+        </div>
 
-      {mockLevelNodes.map((node, idx) => (
-        <div key={node.id}>
-          {idx > 0 && <CircuitConnector />}
+        <div className="relative grid gap-6 md:grid-cols-3">
+          <svg className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none">
+            <motion.path
+              d="M 130 82 C 280 82, 360 170, 500 170"
+              stroke="#F33232"
+              strokeWidth="2.5"
+              strokeDasharray="8 8"
+              fill="none"
+              animate={{ strokeDashoffset: [0, -24] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            />
+            <motion.path
+              d="M 500 170 C 360 260, 260 350, 120 440"
+              stroke="#F33232"
+              strokeWidth="2.5"
+              strokeDasharray="8 8"
+              fill="none"
+              animate={{ strokeDashoffset: [0, 24] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
+            />
+          </svg>
+
+          {mockLevelNodes.map((node, idx) => (
           <motion.button
+            key={node.id}
             type="button"
             onClick={() => setOpen(true)}
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-10%' }}
-            whileHover={{ scale: 1.01 }}
-            className="relative w-full rounded-2xl border border-white/10 bg-gradient-to-br from-black/70 to-ronin-nav-from/30 p-5 text-left shadow-ronin"
+            transition={{ delay: idx * 0.05 }}
+            whileHover={{ scale: 1.03 }}
+            className="relative z-10 w-full rounded-[22px] border border-white/20 bg-gradient-to-br from-black/80 to-ronin-nav-from/25 p-4 text-left shadow-ronin"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -63,7 +79,7 @@ export default function LevelsCircuitPanel() {
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.3em] text-ronin-muted">{node.difficulty}</p>
-                  <h3 className="font-display text-xl font-semibold text-ronin-cream">{node.title}</h3>
+                  <h3 className="font-display text-base font-semibold text-ronin-cream md:text-lg">{node.title}</h3>
                 </div>
               </div>
               <div className="text-right">
@@ -83,8 +99,9 @@ export default function LevelsCircuitPanel() {
               ))}
             </div>
           </motion.button>
+          ))}
         </div>
-      ))}
+      </div>
 
       <ChallengeModal open={open} onClose={() => setOpen(false)} detail={mockChallengeDetail} />
     </div>

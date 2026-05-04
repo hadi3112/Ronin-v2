@@ -3,46 +3,74 @@
 export const mockLevelNodes = [
   {
     id: 'l1',
-    title: 'Compiler Dawn',
-    difficulty: 'Novice',
+    title: 'C++ Basics: Variables and Data Types',
+    difficulty: 'Beginner',
     completion: 100,
     sublevels: [
-      { id: 'l1a', title: 'Syntax Shrine', completion: 100 },
-      { id: 'l1b', title: 'Runtime Rift', completion: 80 },
+      { id: 'l1a', title: 'C++ Syntax and Program Structure', completion: 100 },
+      { id: 'l1b', title: 'Input and Output in C++', completion: 80 },
     ],
   },
   {
     id: 'l2',
-    title: 'Async Abyss',
-    difficulty: 'Adept',
+    title: 'Control Flow: Conditions and Loops',
+    difficulty: 'Intermediate',
     completion: 64,
     sublevels: [
-      { id: 'l2a', title: 'Promise Gates', completion: 50 },
-      { id: 'l2b', title: 'Await Arena', completion: 40 },
-      { id: 'l2c', title: 'Microtask Maze', completion: 0 },
+      { id: 'l2a', title: 'if / else Decision Making', completion: 50 },
+      { id: 'l2b', title: 'for and while Loops', completion: 40 },
+      { id: 'l2c', title: 'switch Statements', completion: 0 },
     ],
   },
   {
     id: 'l3',
-    title: 'Neon Interface',
-    difficulty: 'Elite',
+    title: 'Functions and Reusability',
+    difficulty: 'Intermediate',
     completion: 22,
-    sublevels: [{ id: 'l3a', title: 'Motion Matrix', completion: 10 }],
+    sublevels: [{ id: 'l3a', title: 'Function Parameters and Return Values', completion: 10 }],
   },
   {
     id: 'l4',
-    title: 'Edge Citadel',
-    difficulty: 'Master',
+    title: 'Arrays and Strings',
+    difficulty: 'Intermediate',
     completion: 0,
     sublevels: [],
+  },
+  {
+    id: 'l5',
+    title: 'Object Oriented Programming',
+    difficulty: 'Advanced',
+    completion: 0,
+    sublevels: [{ id: 'l5a', title: 'Classes and Objects', completion: 0 }],
+  },
+  {
+    id: 'l6',
+    title: 'Problem Solving Challenge Set',
+    difficulty: 'Advanced',
+    completion: 0,
+    sublevels: [{ id: 'l6a', title: 'Grade Finder and Logic Tasks', completion: 0 }],
   },
 ]
 
 export const mockChallengeDetail = {
-  title: 'Async Abyss — Await Arena',
+  title: 'Challenge #1: Grade Finder',
   stars: 2,
-  difficulty: 'Adept',
+  difficulty: 'Intermediate',
   xp: 420,
   description:
-    'Navigate three parallel requests, cancel on unmount, and keep UI honor with suspenseful loading states.',
+    'Write a C++ program that takes marks as input and outputs the correct grade using conditional logic.',
+  testQuestions: [
+    {
+      id: 'q1',
+      question: 'Which strategy prevents a race condition when multiple async requests return out of order?',
+      options: ['Use AbortController + stale-check guards', 'Use setTimeout for every fetch', 'Reload the page each submit'],
+      answer: 0,
+    },
+    {
+      id: 'q2',
+      question: 'What is the safest place to cancel inflight requests in React?',
+      options: ['Inside render()', 'Inside useEffect cleanup', 'Inside module scope'],
+      answer: 1,
+    },
+  ],
 }

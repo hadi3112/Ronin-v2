@@ -8,7 +8,7 @@ import { AuthContext } from './auth-context-core.js'
 const STORAGE_KEY = 'ronin.session.v1'
 
 /** @typedef {{ uid: string; email: string; displayName: string }} AuthUser */
-/** @typedef {{ interests: string[]; skill: string; learningStyle: string }} UserPreferences */
+/** @typedef {{ interests: string[]; skill: string; learningStyle: string; contentModes?: string[] }} UserPreferences */
 
 function readSession() {
   try {

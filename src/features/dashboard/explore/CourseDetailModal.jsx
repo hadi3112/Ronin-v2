@@ -9,11 +9,16 @@ export default function CourseDetailModal({ open, onClose, course }) {
     <UiModal open={open} onClose={onClose}>
       <div className="grid gap-6 md:grid-cols-5">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/50 md:col-span-2">
-          <motion.div
-            className={`h-48 bg-gradient-to-br md:h-full min-h-[200px] ${course.accent ?? 'from-ronin-crimson/40'}`}
-            animate={{ backgroundPosition: ['0% 0%', '100% 100%'] }}
-            transition={{ duration: 8, repeat: Infinity, repeatType: 'mirror' }}
-          />
+          {course.image ? (
+            <img src={course.image} alt={course.title} className="h-48 w-full object-cover md:h-full min-h-[200px]" />
+          ) : (
+            <motion.div
+              className={`h-48 bg-gradient-to-br md:h-full min-h-[200px] ${course.accent ?? 'from-ronin-crimson/40'}`}
+              animate={{ backgroundPosition: ['0% 0%', '100% 100%'] }}
+              transition={{ duration: 8, repeat: Infinity, repeatType: 'mirror' }}
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs uppercase tracking-[0.35em] text-ronin-cream/80">
             Autoplay preview (swap for Firebase Storage / MUX / Vimeo)
           </div>
