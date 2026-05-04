@@ -40,7 +40,10 @@ export function mergeQuestionBank(remote) {
   let sys = base.system_architecture
   if (remote.system_architecture && typeof remote.system_architecture === 'object') {
     const r = remote.system_architecture
-    if (!Array.isArray(r) && (r.linked_list || r.circular_queue || r.dfs_tree)) {
+    if (
+      !Array.isArray(r) &&
+      (r.linked_list_memory || r.circular_queue || r.circular_queue_alt || r.dfs_tree || r.linked_list)
+    ) {
       sys = { ...base.system_architecture, ...structuredClone(r) }
     }
   }

@@ -1,9 +1,10 @@
 /** Dashboard hero + XP — mock until backend / Firebase profile exists */
 export const mockProfile = {
   displayName: 'Hadi',
+  startingLevel: 1,
   xpCurrent: 2571,
   xpGoal: 8000,
-  trackTitle: 'C++ Fundamentals Track',
+  trackTitle: 'Python Boss Trial',
   trackPoints: 12840,
   latestCourse: {
     id: 'course-neon-stack',

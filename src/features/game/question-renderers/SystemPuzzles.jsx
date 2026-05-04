@@ -1,200 +1,251 @@
 import { useMemo, useState } from 'react'
+import { ANSWER_TEXT, QUESTION_TEXT } from '../questionTypography.js'
 
-function LinkedListPuzzle({ payload, disabled, onSubmit }) {
-  const target = useMemo(() => payload.solutionOrder ?? [], [payload.solutionOrder])
-  const start = useMemo(() => payload.nodes ?? [], [payload.nodes])
-  const [order, setOrder] = useState(() => [...start])
-
-  const move = (from, dir) => {
-    const to = from + dir
-    if (to < 0 || to >= order.length) return
-    const next = [...order]
-    ;[next[from], next[to]] = [next[to], next[from]]
-    setOrder(next)
-  }
-
-  const correct = JSON.stringify(order) === JSON.stringify(target)
+function LinkedListMemoryPuzzle({ payload, disabled, onSubmit }) {
+  const cells = payload.cells ?? []
+  const q = payload.questionText ?? 'Study the memory layout.'
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-ronin-muted">{payload.title}</p>
-      <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
-        {order.map((n, i) => (
-          <div key={`${n}-${i}`} className="flex items-center gap-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/10 text-sm font-bold text-ronin-cream">
-              {n}
-            </div>
-            <div className="flex flex-col gap-1">
-              <button
-                type="button"
-                disabled={disabled}
-                className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-ronin-cream hover:bg-white/5 disabled:opacity-40"
-                onClick={() => move(i, -1)}
-              >
-                Up
-              </button>
-              <button
-                type="button"
-                disabled={disabled}
-                className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-ronin-cream hover:bg-white/5 disabled:opacity-40"
-                onClick={() => move(i, 1)}
-              >
-                Down
-              </button>
-            </div>
-            {i < order.length - 1 && <span className="text-ronin-muted">→</span>}
-          </div>
-        ))}
-      </div>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onSubmit(correct)}
-        className="rounded-xl border border-ronin-crimson/40 bg-ronin-crimson/15 px-5 py-2 text-sm font-semibold text-ronin-cream hover:bg-ronin-crimson/25 disabled:opacity-40"
-      >
-        Lock answer
-      </button>
-    </div>
-  )
-}
-
-function CircularQueuePuzzle({ payload, disabled, onSubmit }) {
-  const [choice, setChoice] = useState(null)
-  const seq = payload.sequence ?? []
-
-  return (
-    <div className="space-y-4">
-      <p className="text-sm text-ronin-muted">{payload.title}</p>
-      <div className="flex flex-wrap gap-2 text-xs text-ronin-cream">
-        {seq.map((s, i) => (
-          <span key={`${s.op}-${i}`} className="rounded-lg border border-white/10 bg-black/40 px-3 py-2">
-            {s.op}
-            {s.value ? `: ${s.value}` : ''}
-          </span>
-        ))}
-      </div>
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-2">
-        {['A', 'B', 'C', 'D'].map((letter, idx) => (
+      <p className={QUESTION_TEXT}>{q}</p>
+      <div className="flex flex-wrap items-end justify-center gap-3">
+        {cells.map((c, i) => (
           <div
-            key={letter}
-            className="relative flex aspect-square flex-col items-center justify-center rounded-xl border border-white/10 bg-black/35 text-sm font-semibold text-ronin-cream"
+            key={`${c.data}-${i}`}
+            className="flex w-[88px] flex-col overflow-hidden rounded-lg border border-emerald-400/40 bg-black/60 shadow-innerGlow"
           >
-            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] text-ronin-muted">{idx}</span>
-            {letter}
+            <div className="border-b border-white/10 bg-emerald-500/15 px-2 py-2 text-center">
+              <p className="text-[10px] uppercase tracking-widest text-ronin-muted">data</p>
+              <p className={`${QUESTION_TEXT} text-center`}>{c.data}</p>
+            </div>
+            <div className="px-2 py-2 text-center">
+              <p className="text-[10px] uppercase tracking-widest text-ronin-muted">prev</p>
+              <p className="font-mono text-[12px] text-amber-200/90">{c.prev}</p>
+            </div>
           </div>
         ))}
       </div>
-      <p className="text-xs text-ronin-muted">Which value is at the front after the sequence?</p>
       <div className="grid gap-2">
         {(payload.choices ?? []).map((c, idx) => (
           <button
             key={c}
             type="button"
             disabled={disabled}
-            onClick={() => setChoice(idx)}
-            className={[
-              'rounded-xl border px-4 py-3 text-left text-sm',
-              choice === idx ? 'border-ronin-crimson/60 bg-ronin-crimson/15' : 'border-white/10 bg-black/40',
-              'text-ronin-cream hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40',
-            ].join(' ')}
+            onClick={() => onSubmit(idx === payload.answerIndex)}
+            className={`rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-left ${ANSWER_TEXT} hover:bg-white/5 disabled:opacity-40`}
           >
             {c}
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        disabled={disabled || choice == null}
-        onClick={() => onSubmit(choice === payload.answerIndex)}
-        className="rounded-xl border border-ronin-crimson/40 bg-ronin-crimson/15 px-5 py-2 text-sm font-semibold text-ronin-cream hover:bg-ronin-crimson/25 disabled:opacity-40"
-      >
-        Submit
-      </button>
     </div>
   )
 }
 
-function DfsTreePuzzle({ payload, disabled, onSubmit }) {
-  const solution = useMemo(() => payload.solutionClickOrder ?? [], [payload.solutionClickOrder])
-  const [clicked, setClicked] = useState([])
+function simulateRing(capacity, sequence) {
+  const buf = Array.from({ length: capacity }, () => null)
+  let head = 0
+  let size = 0
 
-  const nodes = useMemo(() => payload.nodes ?? [], [payload.nodes])
-
-  const dimmed = useMemo(() => {
-    const set = new Set()
-    const skip = payload.skipNode
-    if (!skip) return set
-    const frontier = [skip]
-    while (frontier.length) {
-      const id = frontier.pop()
-      if (set.has(id)) continue
-      set.add(id)
-      for (const n of nodes) {
-        if (n.parent === id) frontier.push(n.id)
-      }
+  for (const step of sequence) {
+    if (step.op === 'enqueue') {
+      if (size >= capacity) continue
+      buf[(head + size) % capacity] = step.value
+      size += 1
+    } else if (step.op === 'dequeue') {
+      if (size <= 0) continue
+      buf[head % capacity] = null
+      head = (head + 1) % capacity
+      size -= 1
     }
-    return set
-  }, [nodes, payload.skipNode])
+  }
+  return { buf, head: head % capacity, size }
+}
+
+function CircularQueueRing({ payload, disabled, onSubmit }) {
+  const capacity = payload.capacity ?? 6
+  const { buf, head } = useMemo(() => simulateRing(capacity, payload.sequence ?? []), [capacity, payload.sequence])
+  const q = payload.questionText ?? 'Follow the ring buffer operations.'
+
+  return (
+    <div className="space-y-4">
+      <p className={QUESTION_TEXT}>{q}</p>
+      <div className="relative mx-auto aspect-square w-full max-w-[min(100%,380px)]">
+        <svg viewBox="0 0 200 200" className="h-full w-full">
+          <circle cx="100" cy="100" r="78" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="2" strokeDasharray="6 6" />
+          {Array.from({ length: capacity }, (_, i) => {
+            const angle = (i / capacity) * Math.PI * 2 - Math.PI / 2
+            const cx = 100 + 64 * Math.cos(angle)
+            const cy = 100 + 64 * Math.sin(angle)
+            const letter = buf[i] ?? '·'
+            const isHead = i === head
+            return (
+              <g key={i}>
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r="22"
+                  fill={isHead ? 'rgba(243,50,50,0.22)' : 'rgba(0,0,0,0.55)'}
+                  stroke={isHead ? 'rgba(243,110,110,0.8)' : 'rgba(255,255,255,0.2)'}
+                  strokeWidth="2"
+                />
+                <text x={cx} y={cy + 5} textAnchor="middle" fill="#f7f7f7" fontSize="14" fontWeight="700">
+                  {letter}
+                </text>
+                <text
+                  x={100 + 86 * Math.cos(angle)}
+                  y={100 + 86 * Math.sin(angle) + 4}
+                  textAnchor="middle"
+                  fill="rgba(191,191,191,0.85)"
+                  fontSize="10"
+                >
+                  {i}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+      <p className="text-xs text-ronin-muted">Head slot highlighted in crimson. Indices 0–{capacity - 1} mark ring order.</p>
+      <div className="grid gap-2">
+        {(payload.choices ?? []).map((c, idx) => (
+          <button
+            key={c}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSubmit(idx === payload.answerIndex)}
+            className={`rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-left ${ANSWER_TEXT} hover:bg-white/5 disabled:opacity-40`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function isValidTreeClick(clicked, nextId, nodesById, middleId) {
+  if (clicked.has(nextId)) return false
+  const n = nodesById.get(nextId)
+  if (!n) return false
+  for (const c of n.children) {
+    if (!clicked.has(c)) return false
+  }
+  const l1 = [2, 3, 4].filter((id) => nodesById.has(id))
+  if (nextId === middleId) {
+    for (const id of l1) {
+      if (id === middleId) continue
+      if (!clicked.has(id)) return false
+    }
+  }
+  if (nextId === 1) {
+    for (const id of l1) {
+      if (!clicked.has(id)) return false
+    }
+  }
+  return true
+}
+
+const LAYOUT = {
+  1: { x: 200, y: 28 },
+  2: { x: 80, y: 100 },
+  3: { x: 200, y: 100 },
+  4: { x: 320, y: 100 },
+  5: { x: 40, y: 200 },
+  6: { x: 120, y: 200 },
+  7: { x: 160, y: 200 },
+  8: { x: 240, y: 200 },
+  9: { x: 280, y: 200 },
+  10: { x: 360, y: 200 },
+}
+
+function DfsTreePuzzle({ payload, disabled, onSubmit }) {
+  const q = payload.questionText ?? 'Traverse the tree correctly.'
+  const middleId = payload.middleId ?? 3
+  const nodes = useMemo(() => payload.nodes ?? [], [payload.nodes])
+  const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
+  const [clicked, setClicked] = useState(() => new Set())
 
   const handleClick = (id) => {
     if (disabled) return
-    if (dimmed.has(id)) return
-    setClicked((c) => [...c, id])
+    if (!isValidTreeClick(clicked, id, nodesById, middleId)) return
+    setClicked((prev) => new Set([...prev, id]))
   }
 
-  const correct = clicked.length === solution.length && clicked.every((v, i) => v === solution[i])
+  const allIds = nodes.map((n) => n.id)
+  const done = allIds.length > 0 && allIds.every((id) => clicked.has(id))
 
-  const levels = useMemo(() => {
-    const m = new Map()
+  const edges = useMemo(() => {
+    const out = []
     for (const n of nodes) {
-      const arr = m.get(n.level) ?? []
-      arr.push(n)
-      m.set(n.level, arr)
+      for (const c of n.children) {
+        const a = LAYOUT[n.id]
+        const b = LAYOUT[c]
+        if (a && b) out.push({ x1: a.x, y1: a.y + 18, x2: b.x, y2: b.y - 18 })
+      }
     }
-    return [...m.entries()].sort((a, b) => a[0] - b[0])
+    return out
   }, [nodes])
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-ronin-muted">{payload.title}</p>
-      <div className="space-y-6">
-        {levels.map(([level, arr]) => (
-          <div key={level} className="flex flex-wrap items-center justify-center gap-4">
-            {arr.map((n) => {
-              const dim = dimmed.has(n.id)
-              return (
-                <button
-                  key={n.id}
-                  type="button"
-                  disabled={disabled || dim}
-                  onClick={() => handleClick(n.id)}
-                  className={[
-                    'relative flex h-12 w-12 items-center justify-center rounded-full border text-sm font-bold transition',
-                    dim ? 'border-white/5 bg-white/5 text-ronin-muted line-through' : 'border-white/20 bg-white text-black',
-                    'hover:ring-2 hover:ring-ronin-crimson/40 disabled:cursor-not-allowed',
-                  ].join(' ')}
-                >
+      <p className={QUESTION_TEXT}>{q}</p>
+      <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/50 p-2">
+        <svg viewBox="0 0 400 240" className="mx-auto h-[260px] w-full min-w-[360px]">
+          {edges.map((e, i) => (
+            <line
+              key={i}
+              x1={e.x1}
+              y1={e.y1}
+              x2={e.x2}
+              y2={e.y2}
+              stroke="rgba(243,50,50,0.45)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+          ))}
+          {nodes.map((n) => {
+            const p = LAYOUT[n.id]
+            if (!p) return null
+            const on = clicked.has(n.id)
+            return (
+              <g
+                key={n.id}
+                transform={`translate(${p.x}, ${p.y})`}
+                onClick={() => handleClick(n.id)}
+                style={{ cursor: disabled ? 'default' : 'pointer' }}
+              >
+                <circle
+                  r="20"
+                  fill={on ? 'rgba(34,197,94,0.35)' : '#f7f7f7'}
+                  stroke={on ? 'rgba(34,197,94,0.9)' : 'rgba(243,50,50,0.5)'}
+                  strokeWidth="2"
+                />
+                <text y="5" textAnchor="middle" fill={on ? '#ecfdf5' : '#0a0a0a'} fontSize="13" fontWeight="800" pointerEvents="none">
                   {n.id}
-                </button>
-              )
-            })}
-          </div>
-        ))}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
       </div>
-      <p className="text-center text-xs text-ronin-muted">Order tapped: {clicked.join(' → ') || '—'}</p>
+      <p className="text-xs text-ronin-muted">
+        Tapped: {[...clicked].join(' → ') || '—'} · Rule: children before parent; middle level-1 ({middleId}) only after other
+        level-1 nodes are cleared.
+      </p>
       <button
         type="button"
-        disabled={disabled || clicked.length !== solution.length}
-        onClick={() => onSubmit(correct)}
-        className="w-full rounded-xl border border-ronin-crimson/40 bg-ronin-crimson/15 px-5 py-2 text-sm font-semibold text-ronin-cream hover:bg-ronin-crimson/25 disabled:opacity-40"
+        disabled={disabled || !done}
+        onClick={() => onSubmit(true)}
+        className="w-full rounded-xl border border-ronin-crimson/40 bg-ronin-crimson/15 px-5 py-2 text-sm font-semibold text-ronin-cream disabled:opacity-40"
       >
-        Submit traversal
+        Lock traversal
       </button>
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setClicked([])}
-        className="w-full rounded-xl border border-white/10 px-5 py-2 text-xs text-ronin-muted hover:bg-white/5"
+        onClick={() => setClicked(new Set())}
+        className="w-full rounded-xl border border-white/10 py-2 text-xs text-ronin-muted hover:bg-white/5"
       >
         Reset taps
       </button>
@@ -203,8 +254,8 @@ function DfsTreePuzzle({ payload, disabled, onSubmit }) {
 }
 
 export default function SystemPuzzles({ subtype, payload, disabled, onSubmit }) {
-  if (subtype === 'linked_list') return <LinkedListPuzzle payload={payload} disabled={disabled} onSubmit={onSubmit} />
-  if (subtype === 'circular_queue') return <CircularQueuePuzzle payload={payload} disabled={disabled} onSubmit={onSubmit} />
+  if (subtype === 'linked_list_memory') return <LinkedListMemoryPuzzle payload={payload} disabled={disabled} onSubmit={onSubmit} />
+  if (subtype === 'circular_queue') return <CircularQueueRing payload={payload} disabled={disabled} onSubmit={onSubmit} />
   if (subtype === 'dfs_tree') return <DfsTreePuzzle payload={payload} disabled={disabled} onSubmit={onSubmit} />
-  return <p className="text-sm text-ronin-muted">Unknown architecture puzzle.</p>
+  return <p className="text-sm text-ronin-muted">Unknown puzzle type.</p>
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { TechPathElbowDown, TechPathSegmentH } from '../../../components/ui/TechPathLine.jsx'
 import { mockTutorialClusters } from '../../../data/mockTutorials.js'
 import TutorialModal from './TutorialModal.jsx'
 
@@ -25,10 +26,11 @@ export default function TutorialsHighwayPanel() {
       </div>
       <div className="pointer-events-none absolute inset-x-0 top-10 h-px bg-gradient-to-r from-transparent via-ronin-crimson/40 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-16 h-px bg-gradient-to-r from-transparent via-ronin-gold/30 to-transparent" />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-20"
-        style={{ backgroundImage: "url('/images/tech-line.png')", backgroundSize: '280px auto', backgroundRepeat: 'repeat' }}
-      />
+      <div className="pointer-events-none absolute inset-x-0 top-24 flex justify-center gap-2 opacity-75">
+        <TechPathSegmentH width={100} />
+        <TechPathElbowDown className="-mt-1" />
+        <TechPathSegmentH width={120} />
+      </div>
 
       <div className="flex gap-6 overflow-x-auto pb-10 pt-8 scrollbar-hide">
         {loop.map((cluster, idx) => (

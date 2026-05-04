@@ -23,23 +23,34 @@ function pickUnique(pool, n, rng, usedIds) {
   return out
 }
 
-function buildSystemQuestion(bank, rng) {
-  const sys = bank.system_architecture
-  const keys = ['linked_list', 'circular_queue', 'dfs_tree'].filter((k) => sys && sys[k])
-  if (!keys.length) return null
-  const key = keys[Math.floor(rng() * keys.length)]
-  const raw = sys[key]
-  const id = `sys_${key}`
+function hashSessionKey(s) {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
 
-  if (key === 'linked_list') {
+/**
+ * @param {import('./QuestionBankManager.js').QuestionBankShape} bank
+ * @param {string} sysKey
+ */
+function buildSystemQuestion(bank, sysKey) {
+  const sys = bank.system_architecture
+  const raw = sys?.[sysKey]
+  if (!raw) return null
+  const id = `sys_${sysKey}`
+
+  if (sysKey === 'linked_list_memory') {
     return {
       id,
       bankType: 'system_architecture',
-      subtype: 'linked_list',
+      subtype: 'linked_list_memory',
       payload: raw,
     }
   }
-  if (key === 'circular_queue') {
+  if (sysKey === 'circular_queue' || sysKey === 'circular_queue_alt') {
     return {
       id,
       bankType: 'system_architecture',
@@ -47,22 +58,25 @@ function buildSystemQuestion(bank, rng) {
       payload: raw,
     }
   }
-  return {
-    id,
-    bankType: 'system_architecture',
-    subtype: 'dfs_tree',
-    payload: raw,
+  if (sysKey === 'dfs_tree') {
+    return {
+      id,
+      bankType: 'system_architecture',
+      subtype: 'dfs_tree',
+      payload: raw,
+    }
   }
+  return null
 }
 
 /**
- * Samples 10 unique questions: 3+3+3+1 across banks; shuffles final order.
  * @param {import('./QuestionBankManager.js').QuestionBankShape} bank
- * @param {{ rng?: () => number }} [opts]
+ * @param {{ rng?: () => number; sessionKey?: string }} [opts]
  * @returns {object[]}
  */
 export function sampleSessionQuestions(bank, opts = {}) {
   const rng = opts.rng ?? Math.random
+  const h = opts.sessionKey ? hashSessionKey(opts.sessionKey) : Math.floor(rng() * 0xffffffff)
 
   const used = new Set()
   const stacktrace = pickUnique(
@@ -96,7 +110,17 @@ export function sampleSessionQuestions(bank, opts = {}) {
     used,
   )
 
-  const sys = buildSystemQuestion(bank, rng)
+  const sysBank = bank.system_architecture || {}
+  const variants = [
+    { key: 'linked_list_memory', available: Boolean(sysBank.linked_list_memory) },
+    { key: 'circular_queue', available: Boolean(sysBank.circular_queue) },
+    { key: 'circular_queue_alt', available: Boolean(sysBank.circular_queue_alt) },
+    { key: 'dfs_tree', available: Boolean(sysBank.dfs_tree) },
+  ].filter((v) => v.available)
+
+  const pickOrder = variants.length ? variants.map((v) => v.key) : ['dfs_tree']
+  const sysKey = pickOrder[h % pickOrder.length] ?? pickOrder[0]
+  const sys = buildSystemQuestion(bank, sysKey)
   if (sys && !used.has(sys.id)) used.add(sys.id)
 
   const assembled = [...stacktrace, ...code_completion, ...conceptual, ...(sys ? [sys] : [])]
@@ -107,6 +131,10 @@ export function sampleSessionQuestions(bank, opts = {}) {
   for (const q of assembled) {
     if (ids.has(q.id)) throw new Error(`Duplicate question id in session: ${q.id}`)
     ids.add(q.id)
+  }
+
+  if (assembled.length !== SESSION_TOTAL) {
+    throw new Error(`QuestionEngine: expected ${SESSION_TOTAL} questions, got ${assembled.length}`)
   }
 
   return assembled

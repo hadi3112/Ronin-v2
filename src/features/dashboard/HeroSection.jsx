@@ -64,6 +64,9 @@ export default function HeroSection() {
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-ronin-muted">Greeting</p>
             <h2 className="mt-1 font-display text-2xl font-bold text-ronin-cream md:text-3xl">Hi, {name}</h2>
+            <p className="mt-2 inline-flex rounded-full border border-ronin-gold/35 bg-ronin-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-ronin-gold">
+              Starting level · Level {mockProfile.startingLevel ?? 1}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden text-right text-[10px] uppercase tracking-widest text-ronin-muted sm:block">

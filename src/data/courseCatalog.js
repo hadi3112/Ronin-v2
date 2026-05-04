@@ -31,9 +31,9 @@ export const PLACEHOLDER_COURSE_CARDS = [
     skills: [],
     syllabus: [],
     reviews: { avg: 0, count: 0 },
-    disabled: true,
+    disabled: false,
     isActive: false,
-    gameMode: null,
+    gameMode: 'boss_trial',
   },
   {
     id: 'rust',
@@ -47,9 +47,9 @@ export const PLACEHOLDER_COURSE_CARDS = [
     skills: [],
     syllabus: [],
     reviews: { avg: 0, count: 0 },
-    disabled: true,
+    disabled: false,
     isActive: false,
-    gameMode: null,
+    gameMode: 'boss_trial',
   },
   {
     id: 'cpp',
@@ -63,9 +63,9 @@ export const PLACEHOLDER_COURSE_CARDS = [
     skills: [],
     syllabus: [],
     reviews: { avg: 0, count: 0 },
-    disabled: true,
+    disabled: false,
     isActive: false,
-    gameMode: null,
+    gameMode: 'boss_trial',
   },
 ]
 
@@ -102,8 +102,8 @@ export function mergeCatalogWithRemote(remoteCourses) {
     }
     cur.title = String(r.name ?? cur.title)
     cur.isActive = Boolean(r.isActive)
-    cur.disabled = !r.isActive
-    cur.gameMode = r.gameMode ?? cur.gameMode
+    cur.disabled = false
+    cur.gameMode = r.gameMode ?? cur.gameMode ?? 'boss_trial'
     byId.set(id, cur)
   }
 

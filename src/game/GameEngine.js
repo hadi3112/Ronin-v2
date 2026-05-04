@@ -30,10 +30,11 @@ export class GameEngine {
   }
 
   /**
+   * Apply damage and advance session — call only after combat HIT phase (CombatStateMachine).
    * @param {boolean} isCorrect
    * @returns {{ phase: GamePhase; roninHp: number; bossHp: number; index: number; lastCorrect?: boolean }}
    */
-  submitAnswer(isCorrect) {
+  applyCombatResult(isCorrect) {
     if (this.phase !== 'playing') {
       return { phase: this.phase, roninHp: this.roninHp, bossHp: this.bossHp, index: this.index }
     }

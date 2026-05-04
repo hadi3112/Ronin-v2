@@ -5,8 +5,6 @@ import UiModal from '../../../components/ui/UiModal.jsx'
 export default function CourseDetailModal({ open, onClose, course, onStartLearning }) {
   if (!course) return null
 
-  const isPythonBoss = course.id === 'python' && !course.disabled && course.gameMode === 'boss_trial'
-
   return (
     <UiModal open={open} onClose={onClose}>
       <div className="grid gap-6 md:grid-cols-5">
@@ -30,6 +28,9 @@ export default function CourseDetailModal({ open, onClose, course, onStartLearni
           <p className="text-xs uppercase tracking-[0.35em] text-ronin-gold">{course.difficulty}</p>
           <h2 className="mt-2 font-display text-2xl font-bold text-ronin-cream md:text-3xl">{course.title}</h2>
           <p className="mt-3 text-sm text-ronin-muted">{course.summary}</p>
+          <p className="mt-2 rounded-lg border border-ronin-crimson/25 bg-ronin-crimson/10 px-3 py-2 text-xs text-ronin-cream/90">
+            All courses currently launch the same Python Boss Trial session while the broader catalog is under construction.
+          </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-white/10 bg-black/35 p-3 text-xs text-ronin-muted">
@@ -84,7 +85,7 @@ export default function CourseDetailModal({ open, onClose, course, onStartLearni
                 onClose()
               }}
             >
-              {isPythonBoss ? 'Start Boss Trial' : 'Start learning'}
+              Start Boss Trial
             </NeonButton>
             <button
               type="button"

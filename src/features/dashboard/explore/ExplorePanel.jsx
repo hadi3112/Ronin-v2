@@ -52,11 +52,7 @@ export default function ExplorePanel() {
         open={Boolean(active)}
         onClose={() => setActive(null)}
         course={active}
-        onStartLearning={(course) => {
-          if (course.id === 'python' && !course.disabled && course.gameMode === 'boss_trial') {
-            navigate('/dashboard/game/boss-trial')
-          }
-        }}
+        onStartLearning={() => navigate('/dashboard/game/boss-trial')}
       />
     </div>
   )

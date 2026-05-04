@@ -1,21 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { CombatVisualState, runCombatExchange } from '../../../game/CombatStateMachine.js'
 import { loadBossTrialSession } from '../../../game/CourseLoader.js'
 import { GameEngine } from '../../../game/GameEngine.js'
 import { defaultFirebaseService } from '../../../services/FirebaseService.js'
-
-const MID_MS = 320
-const TAIL_MS = 380
-
-/**
- * @typedef {'idle' | 'ronin_dash' | 'boss_dash' | 'shake'} CombatPhase
- */
 
 /**
  * @param {{ userId: string; sessionId: string }} ids
  */
 export function useBossTrialGame(ids) {
   void ids.userId
-  void ids.sessionId
 
   const [loadState, setLoadState] = useState(/** @type {'loading'|'ready'|'error'} */ ('loading'))
   const [loadError, setLoadError] = useState(/** @type {string | null} */ (null))
@@ -26,15 +19,15 @@ export function useBossTrialGame(ids) {
   const [bossHp, setBossHp] = useState(100)
   const [index, setIndex] = useState(0)
   const [phase, setPhase] = useState('playing')
-  const [combatPhase, setCombatPhase] = useState(/** @type {CombatPhase} */ ('idle'))
+  const [combatVisualState, setCombatVisualState] = useState(CombatVisualState.IDLE)
   const [animBusy, setAnimBusy] = useState(false)
-  const timersRef = useRef(/** @type {number[]} */ ([]))
+  const abortRef = useRef(/** @type {AbortController | null} */ (null))
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const { questions: q } = await loadBossTrialSession(defaultFirebaseService, 'python')
+        const { questions: q } = await loadBossTrialSession(defaultFirebaseService, 'python', ids.sessionId)
         if (cancelled) return
         engineRef.current = new GameEngine(q)
         setQuestions(q)
@@ -52,52 +45,50 @@ export function useBossTrialGame(ids) {
     })()
     return () => {
       cancelled = true
-      timersRef.current.forEach((t) => window.clearTimeout(t))
-      timersRef.current = []
+      abortRef.current?.abort()
     }
-  }, [])
-
-  const clearTimers = useCallback(() => {
-    timersRef.current.forEach((t) => window.clearTimeout(t))
-    timersRef.current = []
-  }, [])
-
-  const playCombat = useCallback((roninAttacks, onMid, onEnd) => {
-    clearTimers()
-    setCombatPhase(roninAttacks ? 'ronin_dash' : 'boss_dash')
-    const t1 = window.setTimeout(() => {
-      setCombatPhase('shake')
-      onMid?.()
-    }, MID_MS)
-    const t2 = window.setTimeout(() => {
-      setCombatPhase('idle')
-      onEnd?.()
-    }, MID_MS + TAIL_MS)
-    timersRef.current.push(t1, t2)
-  }, [clearTimers])
+  }, [ids.sessionId])
 
   const applyAnswer = useCallback(
-    (isCorrect) => {
+    async (isCorrect) => {
       const eng = engineRef.current
       if (!eng || eng.phase !== 'playing' || animBusy) return
 
+      abortRef.current?.abort()
+      abortRef.current = new AbortController()
+      const signal = abortRef.current.signal
+
       setAnimBusy(true)
-      playCombat(
-        isCorrect,
-        () => {
-          eng.submitAnswer(isCorrect)
-          setRoninHp(eng.roninHp)
-          setBossHp(eng.bossHp)
-          setPhase(eng.phase)
-        },
-        () => {
-          const latest = engineRef.current
-          if (latest) setIndex(latest.index)
-          setAnimBusy(false)
-        },
-      )
+      try {
+        await runCombatExchange(
+          isCorrect,
+          {
+            onVisualState: (s) => setCombatVisualState(s),
+            applyDamage: () => {
+              const res = eng.applyCombatResult(isCorrect)
+              setRoninHp(eng.roninHp)
+              setBossHp(eng.bossHp)
+              setPhase(eng.phase)
+              return res
+            },
+            shouldBossKO: () => eng.phase === 'victory',
+            shouldRoninKO: () => eng.phase === 'defeat',
+          },
+          signal,
+        )
+        setIndex(eng.index)
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          /* unmount */
+        } else {
+          throw e
+        }
+      } finally {
+        setCombatVisualState(CombatVisualState.IDLE)
+        setAnimBusy(false)
+      }
     },
-    [animBusy, playCombat],
+    [animBusy],
   )
 
   const current = useMemo(() => {
@@ -121,7 +112,7 @@ export function useBossTrialGame(ids) {
     bossHp,
     index,
     phase,
-    combatPhase,
+    combatVisualState,
     animBusy,
     questionLabel,
     applyAnswer,

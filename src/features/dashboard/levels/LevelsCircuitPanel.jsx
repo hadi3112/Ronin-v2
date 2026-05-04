@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Cpu } from 'lucide-react'
+import { TechPathElbowDown, TechPathElbowUp, TechPathSegmentH } from '../../../components/ui/TechPathLine.jsx'
 import { mockChallengeDetail, mockLevelNodes } from '../../../data/mockLevels.js'
 import { useCourseCatalog } from '../../../hooks/useCourseCatalog.js'
 import CourseCard from '../explore/CourseCard.jsx'
@@ -54,25 +55,13 @@ export default function LevelsCircuitPanel() {
         open={Boolean(activeCourse)}
         onClose={() => setActiveCourse(null)}
         course={activeCourse}
-        onStartLearning={(course) => {
-          if (course.id === 'python' && !course.disabled && course.gameMode === 'boss_trial') {
-            navigate('/dashboard/game/boss-trial')
-          }
-        }}
+        onStartLearning={() => navigate('/dashboard/game/boss-trial')}
       />
 
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/45 p-5 md:p-8">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: "url('/images/tech-line.png')",
-            backgroundSize: '280px auto',
-            backgroundRepeat: 'repeat',
-          }}
-        />
         <div className="mb-6 flex items-center justify-between">
           <h3 className="text-2xl font-bold text-ronin-cream">
-            Current Track: <span className="rounded-full bg-ronin-crimson px-3 py-1 text-base">C++</span>
+            Current Track: <span className="rounded-full bg-emerald-600/80 px-3 py-1 text-base">Python Boss Trial</span>
           </h3>
           <button
             type="button"
@@ -82,28 +71,15 @@ export default function LevelsCircuitPanel() {
           </button>
         </div>
 
-        <div className="relative grid gap-6 md:grid-cols-3">
-          <svg className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none">
-            <motion.path
-              d="M 130 82 C 280 82, 360 170, 500 170"
-              stroke="#F33232"
-              strokeWidth="2.5"
-              strokeDasharray="8 8"
-              fill="none"
-              animate={{ strokeDashoffset: [0, -24] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-            />
-            <motion.path
-              d="M 500 170 C 360 260, 260 350, 120 440"
-              stroke="#F33232"
-              strokeWidth="2.5"
-              strokeDasharray="8 8"
-              fill="none"
-              animate={{ strokeDashoffset: [0, 24] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
-            />
-          </svg>
+        <div className="pointer-events-none mb-6 hidden flex-wrap items-end justify-center gap-1 md:flex">
+          <TechPathSegmentH width={90} />
+          <TechPathElbowDown className="-mb-1" />
+          <TechPathSegmentH width={110} />
+          <TechPathElbowUp className="-mb-1" />
+          <TechPathSegmentH width={90} />
+        </div>
 
+        <div className="relative grid gap-6 md:grid-cols-3">
           {mockLevelNodes.map((node, idx) => (
             <motion.button
               key={node.id}

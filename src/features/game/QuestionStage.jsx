@@ -3,11 +3,18 @@ import ConceptualMode from './question-renderers/ConceptualMode.jsx'
 import StacktraceMode from './question-renderers/StacktraceMode.jsx'
 import SystemPuzzles from './question-renderers/SystemPuzzles.jsx'
 
-export default function QuestionStage({ question, disabled, onMcq, onSystem }) {
+export default function QuestionStage({ question, disabled, onMcq, onSystem, onTraceTimeout }) {
   if (!question) return null
 
   if (question.bankType === 'stacktrace') {
-    return <StacktraceMode payload={question.payload} disabled={disabled} onAnswer={onMcq} />
+    return (
+      <StacktraceMode
+        payload={question.payload}
+        disabled={disabled}
+        onAnswer={onMcq}
+        onTimeout={onTraceTimeout}
+      />
+    )
   }
   if (question.bankType === 'code_completion') {
     return <CodeCompletionMode payload={question.payload} disabled={disabled} onAnswer={onMcq} />
