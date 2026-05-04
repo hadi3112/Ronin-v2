@@ -161,17 +161,9 @@ export const CONCEPTUAL_SEED = [
 
 /** Structured system architecture bank (three templates; one sampled per session). */
 export const SYSTEM_ARCHITECTURE_SEED = {
+  /** Payload is generated per session in QuestionEngine (drag-and-drop prev chain). */
   linked_list_memory: {
     kind: 'linked_list_memory',
-    questionText:
-      'Each block is a list node: top row is payload `data`, bottom row is `prev` pointer (hex). Which `data` value belongs to the node whose `prev` is the sentinel / head marker `0x00000000`?',
-    cells: [
-      { data: 42, prev: '0x00000000' },
-      { data: 17, prev: '0x8f0a3c10' },
-      { data: 91, prev: '0x8f0a3c18' },
-    ],
-    choices: ['42', '17', '91'],
-    answerIndex: 0,
   },
   circular_queue: {
     kind: 'circular_queue',
@@ -206,24 +198,8 @@ export const SYSTEM_ARCHITECTURE_SEED = {
     choices: ['L', 'M', 'N', 'K'],
     answerIndex: 1,
   },
+  /** Payload is generated per session in QuestionEngine (random 4-level tree, post-order check). */
   dfs_tree: {
     kind: 'dfs_tree',
-    questionText:
-      'Interactive tree: level 0 has the root, level 1 has three nodes (left / middle / right), each branches to two leaves on level 2. Start on any level-2 node, then only click a node when both children beneath it are already selected. Remove the middle level-1 node last among the three level-1 nodes (visit its leaves first, then it). Finish at the root.',
-    rootId: 1,
-    /** middle level-1 id — must be clicked after its two leaves, before other L1 if they still have unclicked leaves */
-    middleId: 3,
-    nodes: [
-      { id: 1, level: 0, parent: null, children: [2, 3, 4] },
-      { id: 2, level: 1, parent: 1, children: [5, 6] },
-      { id: 3, level: 1, parent: 1, children: [7, 8] },
-      { id: 4, level: 1, parent: 1, children: [9, 10] },
-      { id: 5, level: 2, parent: 2, children: [] },
-      { id: 6, level: 2, parent: 2, children: [] },
-      { id: 7, level: 2, parent: 3, children: [] },
-      { id: 8, level: 2, parent: 3, children: [] },
-      { id: 9, level: 2, parent: 4, children: [] },
-      { id: 10, level: 2, parent: 4, children: [] },
-    ],
   },
 }

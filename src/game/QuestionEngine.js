@@ -1,3 +1,6 @@
+import { buildDfsTreePayload } from './dfsTreeGenerator.js'
+import { buildLinkedListDragPayload } from './linkedListPuzzle.js'
+
 const SESSION_TOTAL = 10
 const COUNTS = { stacktrace: 3, code_completion: 3, conceptual: 3, system_architecture: 1 }
 
@@ -35,8 +38,9 @@ function hashSessionKey(s) {
 /**
  * @param {import('./QuestionBankManager.js').QuestionBankShape} bank
  * @param {string} sysKey
+ * @param {() => number} rng
  */
-function buildSystemQuestion(bank, sysKey) {
+function buildSystemQuestion(bank, sysKey, rng) {
   const sys = bank.system_architecture
   const raw = sys?.[sysKey]
   if (!raw) return null
@@ -47,7 +51,7 @@ function buildSystemQuestion(bank, sysKey) {
       id,
       bankType: 'system_architecture',
       subtype: 'linked_list_memory',
-      payload: raw,
+      payload: buildLinkedListDragPayload(rng),
     }
   }
   if (sysKey === 'circular_queue' || sysKey === 'circular_queue_alt') {
@@ -63,7 +67,7 @@ function buildSystemQuestion(bank, sysKey) {
       id,
       bankType: 'system_architecture',
       subtype: 'dfs_tree',
-      payload: raw,
+      payload: buildDfsTreePayload(rng),
     }
   }
   return null
@@ -120,7 +124,7 @@ export function sampleSessionQuestions(bank, opts = {}) {
 
   const pickOrder = variants.length ? variants.map((v) => v.key) : ['dfs_tree']
   const sysKey = pickOrder[h % pickOrder.length] ?? pickOrder[0]
-  const sys = buildSystemQuestion(bank, sysKey)
+  const sys = buildSystemQuestion(bank, sysKey, rng)
   if (sys && !used.has(sys.id)) used.add(sys.id)
 
   const assembled = [...stacktrace, ...code_completion, ...conceptual, ...(sys ? [sys] : [])]

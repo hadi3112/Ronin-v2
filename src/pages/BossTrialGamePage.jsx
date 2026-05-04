@@ -224,7 +224,7 @@ export default function BossTrialGamePage() {
           </div>
         </section>
 
-        <section className="flex min-h-[32vh] flex-[2] flex-col p-3 md:p-4">
+        <section className="flex min-h-[32vh] flex-[2] flex-col overflow-visible p-3 md:p-4">
           <CombatRenderer
             combatVisualState={game.combatVisualState}
             roninHp={game.roninHp}

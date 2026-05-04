@@ -27,7 +27,7 @@ export const PLACEHOLDER_COURSE_CARDS = [
     xpReward: 0,
     summary: 'Placeholder track — enable when the curriculum ships.',
     accent: 'from-amber-500/25',
-    image: 'https://images.unsplash.com/photo-1579468118864-1b9ea2c736db?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1627398242454-45a1445d2472?auto=format&fit=crop&w=1200&q=80',
     skills: [],
     syllabus: [],
     reviews: { avg: 0, count: 0 },
