@@ -2,8 +2,10 @@ import { motion } from 'framer-motion'
 import NeonButton from '../../../components/ui/NeonButton.jsx'
 import UiModal from '../../../components/ui/UiModal.jsx'
 
-export default function CourseDetailModal({ open, onClose, course }) {
+export default function CourseDetailModal({ open, onClose, course, onStartLearning }) {
   if (!course) return null
+
+  const isPythonBoss = course.id === 'python' && !course.disabled && course.gameMode === 'boss_trial'
 
   return (
     <UiModal open={open} onClose={onClose}>
@@ -74,8 +76,15 @@ export default function CourseDetailModal({ open, onClose, course }) {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <NeonButton type="button" className="px-8 py-3 text-base" onClick={onClose}>
-              Start learning
+            <NeonButton
+              type="button"
+              className="px-8 py-3 text-base"
+              onClick={() => {
+                onStartLearning?.(course)
+                onClose()
+              }}
+            >
+              {isPythonBoss ? 'Start Boss Trial' : 'Start learning'}
             </NeonButton>
             <button
               type="button"

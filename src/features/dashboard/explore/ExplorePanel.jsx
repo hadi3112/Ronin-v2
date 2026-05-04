@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { exploreRows } from '../../../data/mockExplore.js'
+import { useCourseCatalog } from '../../../hooks/useCourseCatalog.js'
 import CourseCard from './CourseCard.jsx'
 import CourseDetailModal from './CourseDetailModal.jsx'
 
@@ -31,14 +33,31 @@ function Row({ row, onOpen, index }) {
 }
 
 export default function ExplorePanel() {
+  const navigate = useNavigate()
+  const { exploreFeaturedRow, error } = useCourseCatalog()
   const [active, setActive] = useState(null)
 
   return (
     <div className="space-y-10">
+      {error && (
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-100/90">
+          Catalog sync warning: {error}. Python stays available offline.
+        </p>
+      )}
+      <Row row={exploreFeaturedRow} onOpen={setActive} index={0} />
       {exploreRows.map((row, i) => (
-        <Row key={row.id} row={row} onOpen={setActive} index={i} />
+        <Row key={row.id} row={row} onOpen={setActive} index={i + 1} />
       ))}
-      <CourseDetailModal open={Boolean(active)} onClose={() => setActive(null)} course={active} />
+      <CourseDetailModal
+        open={Boolean(active)}
+        onClose={() => setActive(null)}
+        course={active}
+        onStartLearning={(course) => {
+          if (course.id === 'python' && !course.disabled && course.gameMode === 'boss_trial') {
+            navigate('/dashboard/game/boss-trial')
+          }
+        }}
+      />
     </div>
   )
 }

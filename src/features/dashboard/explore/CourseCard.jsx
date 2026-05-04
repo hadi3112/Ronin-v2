@@ -1,16 +1,24 @@
 import { motion } from 'framer-motion'
 
 export default function CourseCard({ course, onOpen }) {
+  const disabled = Boolean(course.disabled)
+
   return (
     <motion.button
       type="button"
-      onClick={() => onOpen(course)}
-      className="group relative w-[220px] shrink-0 snap-start text-left md:w-[260px]"
-      whileHover={{ zIndex: 5 }}
+      disabled={disabled}
+      onClick={() => {
+        if (!disabled) onOpen(course)
+      }}
+      className={[
+        'group relative w-[220px] shrink-0 snap-start text-left md:w-[260px]',
+        disabled ? 'cursor-not-allowed opacity-55' : '',
+      ].join(' ')}
+      whileHover={disabled ? undefined : { zIndex: 5 }}
     >
       <motion.div
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/50 shadow-ronin"
-        whileHover={{ scale: 1.12 }}
+        whileHover={disabled ? undefined : { scale: 1.12 }}
         transition={{ type: 'spring', stiffness: 260, damping: 18 }}
       >
         {course.image ? (
@@ -37,7 +45,9 @@ export default function CourseCard({ course, onOpen }) {
 
         <div className="space-y-2 p-4">
           <h3 className="line-clamp-2 font-display text-sm font-semibold text-ronin-cream">{course.title}</h3>
-          <p className="text-[11px] text-ronin-muted">{course.difficulty}</p>
+          <p className="text-[11px] text-ronin-muted">
+            {disabled ? 'Locked · coming soon' : course.difficulty}
+          </p>
         </div>
 
         <motion.div

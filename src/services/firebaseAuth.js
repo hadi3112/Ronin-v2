@@ -8,11 +8,15 @@
  *      import { initializeApp } from 'firebase/app'
  *      const firebaseConfig = { apiKey, authDomain, projectId, ... }
  *      export const app = initializeApp(firebaseConfig)
- * 3) import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+ * 3) import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously }
  *    from 'firebase/auth'
  * 4) Export functions that wrap those APIs and throw on real errors.
  *
  * Never commit real API keys — use Vite env: import.meta.env.VITE_FIREBASE_*
+ *
+ * Example (real Firebase):
+ *   const user = firebase.auth().currentUser
+ *   const userId = user?.uid || 'guest'
  */
 
 /**
@@ -21,7 +25,6 @@
  * @returns {Promise<{ uid: string; email: string; displayName: string }>}
  */
 export async function signInWithEmailPasswordStub(email, password) {
-  // Simulate network; replace with signInWithEmailAndPassword(auth, email, password)
   void password
   await new Promise((r) => setTimeout(r, 380))
   const safeEmail = email?.trim() || 'ronin@demo.local'
@@ -37,6 +40,24 @@ export async function signInWithEmailPasswordStub(email, password) {
  */
 export async function signOutStub() {
   await new Promise((r) => setTimeout(r, 120))
+}
+
+/**
+ * Placeholder anonymous auth — real: signInAnonymously(getAuth(app))
+ * @returns {Promise<{ uid: string; isAnonymous: boolean }>}
+ */
+export async function signInAnonymouslyPlaceholder() {
+  await new Promise((r) => setTimeout(r, 160))
+  return { uid: `anon_${Math.random().toString(16).slice(2, 10)}`, isAnonymous: true }
+}
+
+/**
+ * Mirrors: firebase.auth().currentUser?.uid ?? 'guest'
+ * Wire to getAuth(app).currentUser when Firebase is installed.
+ * @returns {string}
+ */
+export function getCurrentUserIdPlaceholder() {
+  return 'guest'
 }
 
 /**
