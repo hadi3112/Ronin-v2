@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { assetUrl } from './assetUrl.js'
 import { CombatVisualState, COMBAT_TIMINGS_MS } from '../CombatStateMachine.js'
-import { playSlashEffect } from './slashEffect.js'
+import { playSlashEffect, SLASH_FX_DEPTH } from './slashEffect.js'
 
 /** Boss sprite sits this many px lower than Ronin baseline (Phaser coordinates). */
 export const BOSS_TRIAL_BOSS_Y_OFFSET_PX = 22
@@ -10,9 +10,6 @@ const RONIN_STRIKES = [
   CombatVisualState.RONIN_STRIKE_1,
   CombatVisualState.RONIN_STRIKE_2,
   CombatVisualState.RONIN_STRIKE_3,
-  CombatVisualState.RONIN_STRIKE_4,
-  CombatVisualState.RONIN_STRIKE_5,
-  CombatVisualState.RONIN_STRIKE_6,
 ]
 
 const BOSS_OVERHEADS = [
@@ -62,9 +59,16 @@ function strikeBeat(visual) {
   return null
 }
 
-function applySpriteGlow(sprite, color, outer, quality) {
+/** Ronin glow reduced ~60% vs prior (outer 3→1, quality 6→2). */
+function applyRoninGlow(sprite) {
   if (sprite?.postFX?.addGlow) {
-    sprite.postFX.addGlow(color, outer, 1, false, 0.11, quality)
+    sprite.postFX.addGlow(0xffffff, 1, 1, false, 0.11, 2)
+  }
+}
+
+function applyBossGlow(sprite) {
+  if (sprite?.postFX?.addGlow) {
+    sprite.postFX.addGlow(0x881144, 3, 1, false, 0.11, 6)
   }
 }
 
@@ -99,8 +103,8 @@ export class ChallengeBattleScene extends Phaser.Scene {
     const H = this.scale.height
     const floorY = H * 0.82
 
-    this.roninRoot = this.add.container(W * 0.22, floorY)
-    this.bossRoot = this.add.container(W * 0.78, floorY + BOSS_TRIAL_BOSS_Y_OFFSET_PX)
+    this.roninRoot = this.add.container(W * 0.22, floorY).setDepth(8)
+    this.bossRoot = this.add.container(W * 0.78, floorY + BOSS_TRIAL_BOSS_Y_OFFSET_PX).setDepth(9)
 
     const roninTex = this.textures.exists('ronin') ? 'ronin' : 'ronin_fb'
     const ronin = this.add.image(0, 0, roninTex).setOrigin(0.5, 1)
@@ -108,22 +112,27 @@ export class ChallengeBattleScene extends Phaser.Scene {
     let rScale = Math.min((W * 0.14) / ronin.width, (H * 0.38) / ronin.height, 1) * 1.5
     rScale = Math.min(rScale, (W * 0.34) / ronin.width, (H * 0.48) / ronin.height)
     ronin.setScale(rScale)
-    applySpriteGlow(ronin, 0xffffff, 3, 6)
+    applyRoninGlow(ronin)
     this.roninRoot.add(ronin)
 
     const bossTex = this.textures.exists('boss') ? 'boss' : 'ronin_fb'
     const boss = this.add.image(0, 0, bossTex).setOrigin(0.5, 1)
     const bScale = Math.min((W * 0.22) / boss.width, (H * 0.42) / boss.height, 1) * 2.6
     boss.setScale(bScale)
-    applySpriteGlow(boss, 0x881144, 3, 6)
+    applyBossGlow(boss)
     this.bossRoot.add(boss)
 
     this.roninSword = this.add.image(28, -H * 0.22, 'ronin_sword').setOrigin(0.8, 0.85).setVisible(false)
     this.roninSword.setScale(rScale * 0.95)
     this.roninRoot.add(this.roninSword)
 
-    this.bossSword = this.add.image(-28, -H * 0.22, 'reds_sword').setOrigin(0.2, 0.85).setVisible(false)
-    this.bossSword.setScale(bScale * 0.35)
+    const redsFrame = this.textures.getFrame('reds_sword')
+    const redsH = redsFrame?.height || 120
+    const targetSwordH = H * 0.26
+    const bossSwordScale = Math.max(targetSwordH / redsH, bScale * 0.55)
+    this.bossSword = this.add.image(-32, -H * 0.22, 'reds_sword').setOrigin(0.2, 0.85).setVisible(false)
+    this.bossSword.setScale(bossSwordScale)
+    this.bossSword.setDepth(4)
     this.bossRoot.add(this.bossSword)
   }
 
@@ -227,6 +236,9 @@ export class ChallengeBattleScene extends Phaser.Scene {
     const strikeDurRonin = COMBAT_TIMINGS_MS.RONIN_STRIKE_BEAT * 0.88
     const strikeDurBoss = COMBAT_TIMINGS_MS.STRIKE_BEAT * 0.88
 
+    const bossTorsoY = floorY + BOSS_TRIAL_BOSS_Y_OFFSET_PX - H * 0.34
+    const roninTorsoY = floorY - H * 0.3
+
     if (this.roninSword) {
       this.tweens.killTweensOf(this.roninSword)
       this.roninSword.setVisible(showRoninSwordIdle || strikeRonin)
@@ -248,26 +260,27 @@ export class ChallengeBattleScene extends Phaser.Scene {
           direction: 'left-to-right',
           color: 0x6ee7b7,
           coreColor: 0xe8fff4,
-          center: { x: W * 0.38, y: H * 0.56 },
-          span: Math.min(300, W * 0.46),
-          arcHeight: Math.min(96, H * 0.24),
+          center: { x: bossX0, y: bossTorsoY },
+          span: Math.min(320, W * 0.5),
+          arcHeight: Math.min(110, H * 0.28),
           duration: Math.floor(strikeDurRonin * 0.95),
+          depth: SLASH_FX_DEPTH,
         })
       }
     }
     if (this.bossSword) {
       this.tweens.killTweensOf(this.bossSword)
       this.bossSword.setVisible(showBossSwordIdle || strikeBoss)
-      this.bossSword.setPosition(-28, -H * 0.22)
+      this.bossSword.setPosition(-32, -H * 0.22)
       this.bossSword.setAngle(-30)
       if (strikeBoss) {
         const sx = this.bossSword.x
         const sy = this.bossSword.y
         this.tweens.add({
           targets: this.bossSword,
-          x: sx - 44,
-          y: sy - 14,
-          angle: { from: -28, to: 38 },
+          x: sx - 48,
+          y: sy - 18,
+          angle: { from: -35, to: 42 },
           duration: strikeDurBoss,
           yoyo: true,
           ease: 'Cubic.out',
@@ -276,10 +289,11 @@ export class ChallengeBattleScene extends Phaser.Scene {
           direction: 'right-to-left',
           color: 0xff1744,
           coreColor: 0xffcdd2,
-          center: { x: W * 0.62, y: H * 0.56 },
-          span: Math.min(300, W * 0.46),
-          arcHeight: Math.min(96, H * 0.24),
+          center: { x: roninX0, y: roninTorsoY },
+          span: Math.min(320, W * 0.5),
+          arcHeight: Math.min(110, H * 0.28),
           duration: Math.floor(strikeDurBoss * 0.95),
+          depth: SLASH_FX_DEPTH,
         })
       }
     }

@@ -1,6 +1,6 @@
 /**
  * Combat presentation + timing contract (drives UI; damage applies only after HIT_RESOLVE).
- * Ronin correct path: dash → six strike beats → stagger → dash back → resolve damage.
+ * Ronin correct path: dash → three strike beats → stagger → dash back → resolve damage.
  */
 
 export const CombatVisualState = {
@@ -67,9 +67,6 @@ export async function runCombatExchange(isCorrect, ops, signal) {
     CombatVisualState.RONIN_STRIKE_1,
     CombatVisualState.RONIN_STRIKE_2,
     CombatVisualState.RONIN_STRIKE_3,
-    CombatVisualState.RONIN_STRIKE_4,
-    CombatVisualState.RONIN_STRIKE_5,
-    CombatVisualState.RONIN_STRIKE_6,
   ]
 
   const seq = isCorrect
