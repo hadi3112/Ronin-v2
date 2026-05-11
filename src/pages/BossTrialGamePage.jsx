@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import NeonButton from '../components/ui/NeonButton.jsx'
-import CombatRenderer from '../features/game/CombatRenderer.jsx'
+import BossTrialCombatPanel from '../features/game/BossTrialCombatPanel.jsx'
 import QuestionStage from '../features/game/QuestionStage.jsx'
 import SessionReviewView from '../features/game/SessionReviewView.jsx'
 import { useBossTrialGame } from '../features/game/hooks/useBossTrialGame.js'
@@ -251,14 +251,16 @@ export default function BossTrialGamePage() {
           </div>
         </section>
 
-        <section className="flex min-h-[32vh] flex-[2] flex-col overflow-visible p-3 md:p-4">
-          <CombatRenderer
-            combatVisualState={game.combatVisualState}
-            roninHp={game.roninHp}
-            bossHp={game.bossHp}
-            phase={game.phase}
-          />
-        </section>
+        {!ended ? (
+          <section className="flex min-h-[32vh] flex-[2] flex-col overflow-visible p-3 md:p-4">
+            <BossTrialCombatPanel
+              combatVisualState={game.combatVisualState}
+              roninHp={game.roninHp}
+              bossHp={game.bossHp}
+              phase={game.phase}
+            />
+          </section>
+        ) : null}
       </div>
 
       {ended && sessionReviewOpen && game.questions ? (
