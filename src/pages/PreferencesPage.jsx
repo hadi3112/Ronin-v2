@@ -146,10 +146,13 @@ export default function PreferencesPage() {
             </div>
           </section>
 
-          <section className="relative flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-black/20 p-6">
-            <GameCanvas variant="preferences" />
-            <p className="mt-4 text-center text-sm text-ronin-muted">Build your dojo path: code, challenge, master.</p>
-          </section>
+          <div className="flex min-h-0 flex-col gap-4">
+            <GameCanvas
+              variant="preferences"
+              className="relative flex min-h-[300px] w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-black/20 p-6 shadow-none"
+            />
+            <p className="text-center text-sm text-ronin-muted">Build your dojo path: code, challenge, master.</p>
+          </div>
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-4">

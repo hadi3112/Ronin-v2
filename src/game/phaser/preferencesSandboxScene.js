@@ -1,6 +1,9 @@
 import Phaser from 'phaser'
 import { assetUrl } from './assetUrl.js'
 
+/** Horizontal offset of red samurai from canvas center (px, Phaser space). */
+const PREF_SAMURAI_OFFSET_X = 28
+
 /** Preferences-only: red samurai preview (Phaser, not React). */
 export class PreferencesSandboxScene extends Phaser.Scene {
   constructor() {
@@ -17,7 +20,7 @@ export class PreferencesSandboxScene extends Phaser.Scene {
   create() {
     const w = this.scale.width
     const h = this.scale.height
-    const cx = w / 2
+    const cx = w / 2 + PREF_SAMURAI_OFFSET_X
     const cy = h / 2
     const maxW = w * 0.5
     const maxH = h * 0.65
@@ -38,7 +41,7 @@ export class PreferencesSandboxScene extends Phaser.Scene {
     sprite.setScale(baseScale)
 
     if (sprite.postFX?.addGlow) {
-      sprite.postFX.addGlow(0x881144, 6, 1, false, 0.22, 12)
+      sprite.postFX.addGlow(0x881144, 3, 1, false, 0.11, 6)
     }
 
     this.tweens.add({

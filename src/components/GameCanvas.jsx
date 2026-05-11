@@ -85,7 +85,7 @@ export default function GameCanvas({
 
   const baseClass =
     variant === 'preferences'
-      ? 'h-72 w-full max-w-sm overflow-hidden rounded-2xl border border-white/15 bg-black/40 shadow-[inset_0_0_40px_rgba(0,0,0,0.45)]'
+      ? 'relative flex min-h-[288px] w-full max-w-sm flex-1 flex-col overflow-hidden'
       : 'h-full min-h-[220px] w-full overflow-hidden rounded-2xl border border-amber-900/35 bg-black/20'
 
   return (
