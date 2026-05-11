@@ -103,6 +103,13 @@ export class ChallengeBattleScene extends Phaser.Scene {
     const H = this.scale.height
     const floorY = H * 0.82
 
+    this.add.rectangle(W / 2, H * 0.42, W, H * 0.88, 0x16110e, 1).setDepth(1)
+    this.add.rectangle(W / 2, H * 0.88, W, H * 0.28, 0x0c0a08, 0.94).setDepth(2)
+    this.add
+      .rectangle(W / 2, H * 0.72, W * 0.85, H * 0.22, 0x2a1f18, 0.35)
+      .setStrokeStyle(1, 0x5c4030, 0.4)
+      .setDepth(3)
+
     this.roninRoot = this.add.container(W * 0.22, floorY).setDepth(8)
     this.bossRoot = this.add.container(W * 0.78, floorY + BOSS_TRIAL_BOSS_Y_OFFSET_PX).setDepth(9)
 
@@ -168,14 +175,39 @@ export class ChallengeBattleScene extends Phaser.Scene {
       ease: 'Cubic.out',
     })
 
-    const stagger =
-      v === CombatVisualState.BOSS_HIT_STAGGER || v === CombatVisualState.RONIN_HIT_STAGGER
-    if (stagger) this.cameras.main.shake(180, 0.012)
+    if (v === CombatVisualState.RONIN_DASH) this._spawnDashWind(true, roninX0, floorY, W, H)
+    if (v === CombatVisualState.BOSS_DASH) this._spawnDashWind(false, bossX0, floorY, W, H)
 
     const beat = strikeBeat(v)
 
     const roninBody = /** @type {Phaser.GameObjects.Image} */ (this.roninRoot?.list[0])
     const bossBody = /** @type {Phaser.GameObjects.Image} */ (this.bossRoot?.list[0])
+
+    const stagger =
+      v === CombatVisualState.BOSS_HIT_STAGGER || v === CombatVisualState.RONIN_HIT_STAGGER
+    if (stagger) {
+      this.cameras.main.shake(200, 0.014)
+      if (v === CombatVisualState.BOSS_HIT_STAGGER && bossBody) {
+        this.tweens.add({
+          targets: bossBody,
+          alpha: { from: 1, to: 0.28 },
+          duration: 55,
+          yoyo: true,
+          repeat: 3,
+          ease: 'Sine.inOut',
+        })
+      }
+      if (v === CombatVisualState.RONIN_HIT_STAGGER && roninBody) {
+        this.tweens.add({
+          targets: roninBody,
+          alpha: { from: 1, to: 0.35 },
+          duration: 55,
+          yoyo: true,
+          repeat: 3,
+          ease: 'Sine.inOut',
+        })
+      }
+    }
 
     if (roninBody) {
       this.tweens.killTweensOf(roninBody)
@@ -195,15 +227,7 @@ export class ChallengeBattleScene extends Phaser.Scene {
         roninBody.setAngle(72)
         this.roninRoot.setY(floorY + 36)
       }
-      if (v === CombatVisualState.RONIN_HIT_STAGGER) {
-        this.tweens.add({
-          targets: roninBody,
-          alpha: { from: 1, to: 0.55 },
-          duration: 90,
-          yoyo: true,
-          repeat: 1,
-        })
-      } else {
+      if (v !== CombatVisualState.RONIN_HIT_STAGGER) {
         roninBody.setAlpha(1)
       }
     }
@@ -232,6 +256,26 @@ export class ChallengeBattleScene extends Phaser.Scene {
     const showBossSwordIdle = v === CombatVisualState.BOSS_DASH || v === CombatVisualState.BOSS_DASH_BACK
     const strikeRonin = beat?.side === 'ronin'
     const strikeBoss = beat?.side === 'boss'
+
+    if (strikeRonin || strikeBoss) {
+      const pull = 12
+      this.time.delayedCall(30, () => {
+        this.tweens.add({
+          targets: this.roninRoot,
+          x: roninX0 + pull,
+          duration: 70,
+          yoyo: true,
+          ease: 'Quad.inOut',
+        })
+        this.tweens.add({
+          targets: this.bossRoot,
+          x: bossX0 - pull,
+          duration: 70,
+          yoyo: true,
+          ease: 'Quad.inOut',
+        })
+      })
+    }
 
     const strikeDurRonin = COMBAT_TIMINGS_MS.RONIN_STRIKE_BEAT * 0.88
     const strikeDurBoss = COMBAT_TIMINGS_MS.STRIKE_BEAT * 0.88
@@ -296,6 +340,32 @@ export class ChallengeBattleScene extends Phaser.Scene {
           depth: SLASH_FX_DEPTH,
         })
       }
+    }
+  }
+
+  /**
+   * Gust lines behind a dash (Phaser graphics only).
+   * @param {boolean} roninLeftToRight
+   */
+  _spawnDashWind(roninLeftToRight, anchorX, floorY, W, H) {
+    const y = floorY - H * 0.08
+    const dir = roninLeftToRight ? 1 : -1
+    for (let i = 0; i < 5; i += 1) {
+      const g = this.add.graphics().setDepth(6)
+      const x0 = anchorX - dir * (20 + i * 14)
+      const x1 = anchorX - dir * (110 + i * 22)
+      g.lineStyle(3 - i * 0.35, 0xf5f5f5, 0.22 - i * 0.03)
+      g.beginPath()
+      g.moveTo(x0, y + i * 4)
+      g.lineTo(x1, y - 6 - i * 3)
+      g.strokePath()
+      this.tweens.add({
+        targets: g,
+        alpha: 0,
+        duration: 220 + i * 30,
+        ease: 'Cubic.out',
+        onComplete: () => g.destroy(),
+      })
     }
   }
 }
