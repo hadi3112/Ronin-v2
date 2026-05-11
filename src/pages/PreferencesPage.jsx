@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Check, Search } from 'lucide-react'
 import AmbientGrid from '../components/layout/AmbientGrid.jsx'
+import GameCanvas from '../components/GameCanvas.jsx'
 import NeonButton from '../components/ui/NeonButton.jsx'
 import { useAuth } from '../hooks/useAuth.js'
-import appicon from '../assets/appicon.png'
-import mascot from '../assets/mascot.png'
 
 const interests = ['HTML', 'Machine Learning', 'JavaScript', 'C++', 'CSS', 'Rust', 'Python 3.0', 'Java', 'Solidity']
 const skills = ['Beginner', 'Intermediate', 'Advanced']
@@ -148,9 +147,8 @@ export default function PreferencesPage() {
           </section>
 
           <section className="relative flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-black/20 p-6">
-            <img src={appicon} alt=".Ronin icon" className="h-28 w-28 object-contain" />
-            <img src={mascot} alt="Ronin mascot" className="mt-4 h-64 w-48 object-contain drop-shadow-[0_0_22px_rgba(243,50,50,0.35)]" />
-            <p className="mt-3 text-center text-sm text-ronin-muted">Build your dojo path: code, challenge, master.</p>
+            <GameCanvas />
+            <p className="mt-4 text-center text-sm text-ronin-muted">Build your dojo path: code, challenge, master.</p>
           </section>
         </div>
 
