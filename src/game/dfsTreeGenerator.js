@@ -1,6 +1,6 @@
 /**
- * Random 4-level tree (levels 0–3): root at 0, leaves at 3.
- * Each internal node gets 2–5 children. Root forced to ≥2 children so “2nd level-1 node” exists.
+ * Random tree: root at level 0, leaves at level 3 (four node layers).
+ * Each internal node gets 2–3 children (DFS fanout). Root has ≥2 children so a “second child of root” exists.
  * @param {() => number} rng
  */
 
@@ -17,7 +17,7 @@ function buildRecursive(level, rng, nextIdRef) {
   if (level >= 3) {
     return { id, level, children: [] }
   }
-  let k = rndInt(rng, 2, 5)
+  let k = rndInt(rng, 2, 3)
   if (level === 0) k = Math.max(2, k)
   const children = []
   for (let i = 0; i < k; i += 1) {
@@ -43,6 +43,24 @@ function onePostOrder(rec) {
 /**
  * @param {TreeNodeFlat[]} flat
  * @param {number[]} order
+ */
+/**
+ * True iff `order` is exactly the DFS post-order for this ordered tree
+ * (each subtree fully post-ordered, children visited left-to-right as in `children` arrays).
+ * @param {number[]} canonical from {@link onePostOrder}
+ * @param {number[]} order
+ */
+export function isCanonicalDfsPostOrder(canonical, order) {
+  if (!canonical?.length || order.length !== canonical.length) return false
+  for (let i = 0; i < canonical.length; i += 1) {
+    if (order[i] !== canonical[i]) return false
+  }
+  return true
+}
+
+/**
+ * Weaker check: any order where every child appears before its parent (superset of true DFS post-order).
+ * @deprecated for gameplay — prefer {@link isCanonicalDfsPostOrder}
  */
 export function isValidPostOrder(flat, order) {
   const n = flat.length
@@ -82,7 +100,7 @@ export function computeLayoutFromTree(rootRec) {
     const w = subtreeWidth(rec)
     const x = left + (w - 1) / 2
     const y = depth * yStep
-    layout[rec.id] = { x: x * 72 + 40, y: y + 36 }
+    layout[rec.id] = { x: x * 58 + 36, y: y + 34 }
     let cursor = left
     for (const c of rec.children) {
       const cw = subtreeWidth(c)
@@ -91,7 +109,7 @@ export function computeLayoutFromTree(rootRec) {
     }
   }
 
-  place(rootRec, 0, 0, 64)
+  place(rootRec, 0, 0, 56)
   let maxX = 120
   let maxY = 120
   for (const p of Object.values(layout)) {
@@ -120,7 +138,7 @@ export function buildDfsTreePayload(rng) {
   return {
     kind: 'dfs_tree',
     questionText:
-      'Depth-first search (post-order): tap nodes in an order where every node is selected only after all of its children have been selected. Your goal is to “delete” the second child of the root (marked with a red target and cross) — build a full traversal that respects DFS post-order for the whole tree.',
+      'Depth-first search (post-order): visit each child subtree in left-to-right order as drawn; within each subtree, finish all descendants before the parent. Tap the full node sequence that matches this DFS post-order. The red target marks the second child of the root (for context) — your answer must still be a valid full-tree DFS post-order.',
     rootId: rootRec.id,
     targetId,
     nodes: flat,

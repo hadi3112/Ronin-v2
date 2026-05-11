@@ -168,6 +168,14 @@ export default function BossTrialGamePage() {
     void game.applyAnswer(Boolean(isCorrect))
   }
 
+  const handleSkip = () => {
+    if (!game.current) return
+    if (busy) return
+    if (answeredRef.current === game.current.id) return
+    answeredRef.current = game.current.id
+    void game.applyAnswer(false)
+  }
+
   if (game.loadState === 'loading') {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 text-center">
@@ -220,7 +228,17 @@ export default function BossTrialGamePage() {
             </div>
           </div>
 
-          <div className="relative min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="relative min-h-0 flex-1 overflow-y-auto pr-1 pt-1">
+            {!ended ? (
+              <button
+                type="button"
+                className="absolute right-2 top-2 z-20 rounded-lg border border-white/15 bg-zinc-950/90 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ronin-cream shadow-md backdrop-blur-sm hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={busy}
+                onClick={handleSkip}
+              >
+                Skip
+              </button>
+            ) : null}
             {ended && !sessionReviewOpen ? (
               <SessionOutcome
                 phase={game.phase}

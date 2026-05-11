@@ -6,6 +6,10 @@ import { playSlashEffect, SLASH_FX_DEPTH } from './slashEffect.js'
 /** Boss sprite sits this many px lower than Ronin baseline (Phaser coordinates). */
 export const BOSS_TRIAL_BOSS_Y_OFFSET_PX = 22
 
+/** Ronin sword offset from prior anchor (right + down in screen space). */
+const RONIN_SWORD_X_PX = 42
+const roninSwordLocalY = (H) => -H * 0.22 + 20
+
 const RONIN_STRIKES = [
   CombatVisualState.RONIN_STRIKE_1,
   CombatVisualState.RONIN_STRIKE_2,
@@ -129,7 +133,7 @@ export class ChallengeBattleScene extends Phaser.Scene {
     applyBossGlow(boss)
     this.bossRoot.add(boss)
 
-    this.roninSword = this.add.image(28, -H * 0.22, 'ronin_sword').setOrigin(0.8, 0.85).setVisible(false)
+    this.roninSword = this.add.image(RONIN_SWORD_X_PX, roninSwordLocalY(H), 'ronin_sword').setOrigin(0.8, 0.85).setVisible(false)
     this.roninSword.setScale(rScale * 0.95)
     this.roninRoot.add(this.roninSword)
 
@@ -286,7 +290,7 @@ export class ChallengeBattleScene extends Phaser.Scene {
     if (this.roninSword) {
       this.tweens.killTweensOf(this.roninSword)
       this.roninSword.setVisible(showRoninSwordIdle || strikeRonin)
-      this.roninSword.setPosition(28, -H * 0.22)
+      this.roninSword.setPosition(RONIN_SWORD_X_PX, roninSwordLocalY(H))
       this.roninSword.setAngle(-30)
       if (strikeRonin) {
         const sx = this.roninSword.x
@@ -362,7 +366,7 @@ export class ChallengeBattleScene extends Phaser.Scene {
       this.tweens.add({
         targets: g,
         alpha: 0,
-        duration: 220 + i * 30,
+        duration: 340 + i * 48,
         ease: 'Cubic.out',
         onComplete: () => g.destroy(),
       })

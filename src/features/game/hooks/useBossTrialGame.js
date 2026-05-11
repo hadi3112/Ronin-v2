@@ -23,6 +23,8 @@ export function useBossTrialGame(ids) {
   const [phase, setPhase] = useState('playing')
   const [combatVisualState, setCombatVisualState] = useState(CombatVisualState.IDLE)
   const [animBusy, setAnimBusy] = useState(false)
+  /** Synchronous guard — avoids stale `animBusy` from useCallback closure blocking the first apply. */
+  const animBusyRef = useRef(false)
   const abortRef = useRef(/** @type {AbortController | null} */ (null))
 
   useEffect(() => {
@@ -52,49 +54,49 @@ export function useBossTrialGame(ids) {
     }
   }, [ids.sessionId])
 
-  const applyAnswer = useCallback(
-    async (isCorrect) => {
-      const eng = engineRef.current
-      if (!eng || eng.phase !== 'playing' || animBusy) return
+  const applyAnswer = useCallback(async (isCorrect) => {
+    const eng = engineRef.current
+    if (!eng || eng.phase !== 'playing' || animBusyRef.current) return
 
-      if (isCorrect) setCorrectCount((c) => c + 1)
+    animBusyRef.current = true
+    setAnimBusy(true)
 
-      abortRef.current?.abort()
-      abortRef.current = new AbortController()
-      const signal = abortRef.current.signal
+    if (isCorrect) setCorrectCount((c) => c + 1)
 
-      setAnimBusy(true)
-      try {
-        await runCombatExchange(
-          isCorrect,
-          {
-            onVisualState: (s) => setCombatVisualState(s),
-            applyDamage: () => {
-              const res = eng.applyCombatResult(isCorrect)
-              setRoninHp(eng.roninHp)
-              setBossHp(eng.bossHp)
-              setPhase(eng.phase)
-              return res
-            },
-            shouldBossKO: () => eng.phase === 'victory',
-            shouldRoninKO: () => eng.phase === 'defeat',
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+    const signal = abortRef.current.signal
+
+    try {
+      await runCombatExchange(
+        isCorrect,
+        {
+          onVisualState: (s) => setCombatVisualState(s),
+          applyDamage: () => {
+            const res = eng.applyCombatResult(isCorrect)
+            setRoninHp(eng.roninHp)
+            setBossHp(eng.bossHp)
+            setPhase(eng.phase)
+            return res
           },
-          signal,
-        )
-        setIndex(eng.index)
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') {
-          /* unmount */
-        } else {
-          throw e
-        }
-      } finally {
-        setCombatVisualState(CombatVisualState.IDLE)
-        setAnimBusy(false)
+          shouldBossKO: () => eng.phase === 'victory',
+          shouldRoninKO: () => eng.phase === 'defeat',
+        },
+        signal,
+      )
+      setIndex(eng.index)
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        /* unmount */
+      } else {
+        throw e
       }
-    },
-    [animBusy],
-  )
+    } finally {
+      setCombatVisualState(CombatVisualState.IDLE)
+      animBusyRef.current = false
+      setAnimBusy(false)
+    }
+  }, [])
 
   const current = useMemo(() => {
     if (!questions) return null

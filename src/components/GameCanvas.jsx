@@ -42,6 +42,8 @@ export default function GameCanvas({
       transparent: true,
       backgroundColor: '#00000000',
       banner: false,
+      audio: false,
+      antialias: true,
       scene: [SceneClass],
       scale: {
         mode: Phaser.Scale.FIT,

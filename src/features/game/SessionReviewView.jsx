@@ -120,7 +120,7 @@ function DfsTreeReview({ payload }) {
         })}
       </svg>
       <p className="mt-2 text-center text-xs text-ronin-muted">
-        One valid post-order (step numbers): {path.join(' → ')}
+        Canonical DFS post-order — children left to right, step numbers: {path.join(' → ')}
       </p>
     </div>
   )

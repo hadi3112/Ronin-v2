@@ -168,7 +168,7 @@ export const SYSTEM_ARCHITECTURE_SEED = {
   circular_queue: {
     kind: 'circular_queue',
     questionText:
-      'Six slots form a ring buffer (indices 0–5). Follow the operations; which letter sits at the head index after the sequence completes?',
+      'Six-slot ring buffer (indices 0–5). Run every operation in the numbered list inside the simulator, then pick the value at the head.',
     capacity: 6,
     sequence: [
       { op: 'enqueue', value: 'A' },
@@ -185,7 +185,7 @@ export const SYSTEM_ARCHITECTURE_SEED = {
   circular_queue_alt: {
     kind: 'circular_queue',
     questionText:
-      'Ring buffer with six slots. After the listed pushes and pops, what value is at the head?',
+      'Six-slot ring. Perform the full operation list in the simulator, then answer which value ends up at the head.',
     capacity: 6,
     sequence: [
       { op: 'enqueue', value: 'K' },

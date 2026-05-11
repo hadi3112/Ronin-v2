@@ -126,6 +126,12 @@ export function sampleSessionQuestions(bank, opts = {}) {
   const sysKey = pickOrder[h % pickOrder.length] ?? pickOrder[0]
   const sys = buildSystemQuestion(bank, sysKey, rng)
   if (sys && !used.has(sys.id)) used.add(sys.id)
+  if (sys) {
+    // Unique per session so graph bus / Phaser canvas keys never collide with other rows or hot reload.
+    sys.id = `${sys.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000)
+      .toString(16)
+      .padStart(4, '0')}`
+  }
 
   const assembled = [...stacktrace, ...code_completion, ...conceptual, ...(sys ? [sys] : [])]
 

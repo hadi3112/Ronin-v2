@@ -30,6 +30,8 @@ export default function QuestionStage({ question, disabled, onMcq, onSystem, onT
         payload={question.payload}
         disabled={disabled}
         onSubmit={onSystem}
+        onMcq={onMcq}
+        questionId={question.id}
       />
     )
   }
