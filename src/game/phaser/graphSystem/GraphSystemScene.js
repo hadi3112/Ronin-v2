@@ -266,11 +266,9 @@ export class GraphSystemScene extends Phaser.Scene {
     let opIdx = 0
     let emittedComplete = false
 
-    const ringCx = W * 0.56
     const ringCy = H * 0.32
     const ringR = Math.min(100, W * 0.15)
 
-    const bankX = 168
     const bankTop = H * 0.14
     const chipSize = 44
     const chipHalf = chipSize / 2
@@ -445,7 +443,7 @@ export class GraphSystemScene extends Phaser.Scene {
     const tlX = 52
     const tlY0 = H * 0.1
     const tlStep = Math.min(36, Math.max(22, (H * 0.62) / Math.max(plan.length, 1)))
-    const hintWrap = Math.min(210, Math.max(140, W * 0.26))
+    const hintWrap = Math.min(200, Math.max(110, W * 0.24))
     plan.forEach((step, i) => {
       const cy = tlY0 + i * tlStep + tlStep * 0.45
       const cont = this.add.container(tlX, cy).setDepth(DEPTH_GRAPH + 3)
@@ -478,6 +476,14 @@ export class GraphSystemScene extends Phaser.Scene {
       cont.add(hint)
       timelineItems.push({ g, lab, val, hint, step })
     })
+    /** Right edge of timeline + hint column; chips stay to the right of this + margin. */
+    const timelineHintsRight = tlX + 28 + hintWrap + 14
+    const bankX = Math.min(W - sockW - 24, Math.max(timelineHintsRight + chipHalf + 10, timelineHintsRight + chipHalf))
+    let ringCx = W * 0.56
+    if (bankX + chipHalf > ringCx - ringR - 12) {
+      ringCx = Math.min(W - ringR - 28, bankX + chipHalf + ringR + 22)
+    }
+
     if (plan.length > 1) {
       const gLine = this.add.graphics().setDepth(DEPTH_GRAPH + 2)
       gLine.lineStyle(2, 0x52525b, 0.5)
@@ -535,13 +541,14 @@ export class GraphSystemScene extends Phaser.Scene {
         const ah = (headIdx / cap) * Math.PI * 2 - Math.PI / 2
         const ax = ringCx + rad * Math.cos(ah)
         const ay = ringCy + rad * Math.sin(ah)
-        const t1 = mkText(ax, ay - 10, 'FRONT \u25B6', 10, '#fca5a5', true)
-        ringAnnot.push(t1)
         const th = (tailIdx / cap) * Math.PI * 2 - Math.PI / 2
         const tx = ringCx + rad * Math.cos(th)
         const ty = ringCy + rad * Math.sin(th)
-        const t2 = mkText(tx, ty + 10, '\u25C0 REAR', 10, '#6ee7b7', true)
-        ringAnnot.push(t2)
+        /** dequeue index: REAR; enqueue index: FRONT (labels swapped from earlier mistake). */
+        const tHead = mkText(ax, ay - 10, '\u25C0 REAR', 10, '#6ee7b7', true)
+        ringAnnot.push(tHead)
+        const tTail = mkText(tx, ty + 10, 'FRONT \u25B6', 10, '#fca5a5', true)
+        ringAnnot.push(tTail)
       }
       drawRingTrack()
     }
