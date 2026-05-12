@@ -140,6 +140,7 @@ export default function BossTrialGamePage() {
   const game = useBossTrialGame({ userId, sessionId })
   const answeredRef = useRef(/** @type {string | null} */ (null))
   const [sessionReviewOpen, setSessionReviewOpen] = useState(false)
+  const [quitConfirmOpen, setQuitConfirmOpen] = useState(false)
 
   useEffect(() => {
     answeredRef.current = null
@@ -176,6 +177,17 @@ export default function BossTrialGamePage() {
     void game.applyAnswer(false)
   }
 
+  const handleBack = () => {
+    if (busy) return
+    if (window.history.length > 1) navigate(-1)
+    else navigate('/dashboard')
+  }
+
+  const handleQuitConfirmed = () => {
+    setQuitConfirmOpen(false)
+    navigate('/dashboard')
+  }
+
   if (game.loadState === 'loading') {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 text-center">
@@ -203,6 +215,41 @@ export default function BossTrialGamePage() {
 
   return (
     <div className="flex min-h-[calc(100vh-96px)] flex-col gap-3">
+      {quitConfirmOpen ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quit-trial-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-zinc-950/95 p-6 shadow-2xl">
+            <h2 id="quit-trial-title" className="font-display text-lg font-bold text-ronin-cream">
+              Quit Boss Trial?
+            </h2>
+            <p className="mt-3 text-sm text-ronin-muted">
+              If you leave now, you will lose progress in this session. Your answers and HP for this run will not be
+              saved.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-ronin-cream hover:bg-white/5"
+                onClick={() => setQuitConfirmOpen(false)}
+              >
+                No, keep playing
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-ronin-crimson/90 px-4 py-2 text-sm font-semibold text-white hover:bg-ronin-crimson"
+                onClick={handleQuitConfirmed}
+              >
+                Yes, quit
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-ronin-muted">
         <div className="flex flex-wrap gap-3">
           <span>
@@ -226,19 +273,37 @@ export default function BossTrialGamePage() {
                 Question {game.questionLabel}
               </span>
             </div>
+            {!ended ? (
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-white/15 bg-zinc-900/95 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ronin-cream shadow-sm hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={busy}
+                  onClick={handleBack}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-white/15 bg-zinc-900/95 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ronin-cream shadow-sm hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={busy}
+                  onClick={handleSkip}
+                >
+                  Skip
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-ronin-crimson/50 bg-zinc-900/95 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ronin-coral shadow-sm hover:bg-ronin-crimson/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={busy}
+                  onClick={() => setQuitConfirmOpen(true)}
+                >
+                  Quit
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="relative min-h-0 flex-1 overflow-y-auto pr-1 pt-1">
-            {!ended ? (
-              <button
-                type="button"
-                className="absolute right-2 top-2 z-20 rounded-lg border border-white/15 bg-zinc-950/90 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ronin-cream shadow-md backdrop-blur-sm hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
-                disabled={busy}
-                onClick={handleSkip}
-              >
-                Skip
-              </button>
-            ) : null}
             {ended && !sessionReviewOpen ? (
               <SessionOutcome
                 phase={game.phase}
