@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Check, Search } from 'lucide-react'
@@ -41,6 +41,18 @@ export default function PreferencesPage() {
   const [learningStyle, setLearningStyle] = useState('Balanced')
   const [selectedModes, setSelectedModes] = useState(() => new Set(['Video based learning']))
   const [search, setSearch] = useState('')
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+
+  useEffect(() => {
+    const check = () => {
+      const mobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+      const smallLandscape = window.innerWidth < 1024 && window.innerHeight < 500
+      setIsMobileLandscape(smallLandscape || (mobileUA && window.innerWidth > window.innerHeight))
+    }
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const canContinue = useMemo(
     () => selected.size > 0 && Boolean(skill) && Boolean(learningStyle) && selectedModes.size > 0,
@@ -75,7 +87,7 @@ export default function PreferencesPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_85%,rgba(243,50,50,0.14),transparent_40%),radial-gradient(circle_at_85%_22%,rgba(243,139,31,0.08),transparent_35%)]" />
 
       <div className="relative z-10 mx-auto max-w-6xl rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-ronin backdrop-blur-xl md:p-10">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className={`grid gap-8 ${isMobileLandscape ? 'grid-cols-[1.2fr_0.8fr]' : 'lg:grid-cols-[1.2fr_0.8fr]'}`}>
           <section>
             <h1 className="max-w-md text-4xl font-bold leading-tight text-ronin-cream md:text-5xl">
               Let&apos;s personalize your preferences
@@ -149,7 +161,7 @@ export default function PreferencesPage() {
           <div className="flex min-h-0 flex-col gap-4">
             <GameCanvas
               variant="preferences"
-              className="relative flex min-h-[300px] w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-black/20 p-6 shadow-none"
+              className={`relative flex w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-black/20 p-6 shadow-none ${isMobileLandscape ? 'min-h-[200px]' : 'min-h-[300px]'}`}
             />
             <p className="text-center text-sm text-ronin-muted">Build your dojo path: code, challenge, master.</p>
           </div>

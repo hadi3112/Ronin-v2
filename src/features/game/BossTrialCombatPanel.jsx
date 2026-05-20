@@ -26,9 +26,15 @@ export default function BossTrialCombatPanel({
   const roninPct = hpFillPercent(roninHp, maxHp)
   const bossPct = hpFillPercent(bossHp, maxHp)
 
+  // On mobile, disable pointer events so touches pass through for page scrolling.
+  // The interactive graph challenge canvases (linked list, DFS, circular queue) are
+  // in a separate section and remain fully tappable.
+  const isMobile = typeof window !== 'undefined' &&
+    ((window.innerWidth < 1024 && window.innerHeight < 500) || /Mobi|Android/i.test(navigator.userAgent))
+
   return (
     <div
-      className="relative h-full min-h-[260px] w-full overflow-hidden rounded-2xl border border-amber-900/45 shadow-[inset_0_0_90px_rgba(0,0,0,0.72)]"
+      className={`relative h-full min-h-[260px] w-full overflow-hidden rounded-2xl border border-amber-900/45 shadow-[inset_0_0_90px_rgba(0,0,0,0.72)] ${isMobile ? 'pointer-events-none' : ''}`}
       style={{ backgroundImage: arenaBg }}
     >
       <div

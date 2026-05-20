@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { StatusBar } from 'expo-status-bar';
+import * as NavigationBar from 'expo-navigation-bar';
 
 // Dev server fallback URL (useful for hot-reloading in emulators / Expo Go)
 // Replace with your local machine's IP address (e.g., http://192.168.1.100:5173) if testing on a physical device.
@@ -12,6 +13,16 @@ const FORCE_OFFLINE_STANDALONE = false;
 
 export default function App() {
   const isDev = __DEV__ && !FORCE_OFFLINE_STANDALONE;
+
+  // Enable Android sticky immersive mode — hides system nav bar,
+  // reappears on bottom-edge swipe, auto-hides after a few seconds.
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync('hidden');
+      NavigationBar.setBehaviorAsync('overlay-swipe');
+      NavigationBar.setBackgroundColorAsync('#0a0a0c');
+    }
+  }, []);
 
   // Select the appropriate source for the WebView
   const getSource = () => {
