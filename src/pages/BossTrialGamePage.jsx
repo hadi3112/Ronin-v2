@@ -141,6 +141,18 @@ export default function BossTrialGamePage() {
   const answeredRef = useRef(/** @type {string | null} */ (null))
   const [sessionReviewOpen, setSessionReviewOpen] = useState(false)
   const [quitConfirmOpen, setQuitConfirmOpen] = useState(false)
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+
+  useEffect(() => {
+    const checkLayout = () => {
+      const isMobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+      const isSmallScreen = window.innerWidth < 1024 && window.innerHeight < 500
+      setIsMobileLandscape(isSmallScreen || (isMobileUA && window.innerWidth > window.innerHeight))
+    }
+    checkLayout()
+    window.addEventListener('resize', checkLayout)
+    return () => window.removeEventListener('resize', checkLayout)
+  }, [])
 
   useEffect(() => {
     answeredRef.current = null
@@ -264,8 +276,8 @@ export default function BossTrialGamePage() {
         </Link>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-black/35 shadow-ronin">
-        <section className="flex min-h-[45vh] flex-[3] flex-col border-b border-white/10 p-4 md:p-6">
+      <div className={`flex min-h-0 flex-1 overflow-hidden rounded-3xl border border-white/10 bg-black/35 shadow-ronin ${isMobileLandscape ? 'flex-row' : 'flex-col'}`}>
+        <section className={`flex flex-col p-4 md:p-6 min-h-0 flex-1 ${isMobileLandscape ? 'w-1/2 border-r border-white/10 border-b-0' : 'min-h-[45vh] flex-[3] border-b border-white/10'}`}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <p className="text-[10px] uppercase tracking-[0.35em] text-ronin-gold">Boss trial</p>
@@ -335,7 +347,7 @@ export default function BossTrialGamePage() {
         </section>
 
         {!ended ? (
-          <section className="flex min-h-[32vh] flex-[2] flex-col overflow-visible p-3 md:p-4">
+          <section className={`flex flex-col overflow-visible p-3 md:p-4 min-h-0 flex-1 ${isMobileLandscape ? 'w-1/2' : 'min-h-[32vh] flex-[2]'}`}>
             <BossTrialCombatPanel
               combatVisualState={game.combatVisualState}
               roninHp={game.roninHp}

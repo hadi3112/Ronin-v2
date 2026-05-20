@@ -57,8 +57,9 @@ export default function GraphChallengeCanvas({ subtype, payload, disabled, onSub
 
     setLoading(true)
     const rect = parent.getBoundingClientRect()
+    const isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent)
     const w = Math.max(320, Math.floor(rect.width) || parent.clientWidth || 520, 1)
-    const h = Math.max(400, Math.floor(rect.height) || parent.clientHeight || 440, 1)
+    const h = Math.max(isMobile ? 280 : 400, Math.floor(rect.height) || parent.clientHeight || 440, 1)
 
     const game = new Phaser.Game({
       type: Phaser.AUTO,
@@ -142,7 +143,7 @@ export default function GraphChallengeCanvas({ subtype, payload, disabled, onSub
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-ronin-coral" />
         </div>
       ) : null}
-      <div ref={parentRef} className="min-h-[400px] w-full overflow-hidden rounded-xl border border-white/10 bg-black/30" />
+      <div ref={parentRef} className="h-[280px] sm:h-[440px] w-full overflow-hidden rounded-xl border border-white/10 bg-black/30" />
     </div>
   )
 }

@@ -70,21 +70,27 @@ export class GraphSystemScene extends Phaser.Scene {
     /** @type {string[]} */
     let orderIds = [...L.initialOrderIds]
     const correct = [...L.correctOrderIds]
-    const cardW = 116
-    const cardH = 152
-    const rx = 14
+    
+    const isMobile = this.scale.height < 360 || this.scale.width < 700
+    const cardScale = isMobile ? Math.max(0.68, Math.min(1.0, (this.scale.height - 60) / 280)) : 1.0
+
+    const cardW = Math.round(116 * cardScale)
+    const cardH = Math.round(152 * cardScale)
+    const rx = Math.round(14 * cardScale)
     const hw = cardW / 2
     const hh = cardH / 2
     const nSlots = orderIds.length
-    const margin = 40
+    const margin = isMobile ? 16 : 40
     const gap = Math.max(
-      76,
-      Math.min(124, (this.scale.width - margin * 2 - cardW) / Math.max(1, nSlots - 1)),
+      Math.round(76 * cardScale),
+      Math.min(Math.round(124 * cardScale), (this.scale.width - margin * 2 - cardW) / Math.max(1, nSlots - 1)),
     )
     const rowOuterW = (nSlots - 1) * gap + cardW
     const leftCenterX = this.scale.width / 2 - rowOuterW / 2 + hw
     const slotXs = orderIds.map((_, i) => leftCenterX + i * gap)
-    const slotY = Math.min(228, Math.max(168, this.scale.height * 0.38))
+    const slotY = isMobile
+      ? Math.round(this.scale.height * 0.42)
+      : Math.min(228, Math.max(168, this.scale.height * 0.38))
 
     const cardMap = new Map()
     /** @type {string | null} */
@@ -166,7 +172,7 @@ export class GraphSystemScene extends Phaser.Scene {
           const t = this.add
             .text(0, y, text, {
               fontFamily: mono ? `"Consolas", "Monaco", monospace` : LL_FONT,
-              fontSize: `${size}px`,
+              fontSize: `${Math.max(7, Math.round(size * cardScale))}px`,
               color,
               fontStyle: mono ? '500' : '600',
             })
@@ -175,12 +181,12 @@ export class GraphSystemScene extends Phaser.Scene {
           return t
         }
 
-        cont.add(label(-hh + 22, 'DATA', 9, '#94a3b8'))
-        cont.add(label(-hh + 44, String(n.data), 17, '#f8fafc'))
-        cont.add(label(-hh + 74, 'PREV', 9, '#94a3b8'))
-        cont.add(label(-hh + 94, String(n.prev), 12, '#fde68a', true))
-        cont.add(label(-hh + 122, 'ADDR', 8, '#94a3b8'))
-        cont.add(label(-hh + 138, String(n.address), 11, '#bae6fd', true))
+        cont.add(label(-hh + Math.round(22 * cardScale), 'DATA', 9, '#94a3b8'))
+        cont.add(label(-hh + Math.round(44 * cardScale), String(n.data), 17, '#f8fafc'))
+        cont.add(label(-hh + Math.round(74 * cardScale), 'PREV', 9, '#94a3b8'))
+        cont.add(label(-hh + Math.round(94 * cardScale), String(n.prev), 12, '#fde68a', true))
+        cont.add(label(-hh + Math.round(122 * cardScale), 'ADDR', 8, '#94a3b8'))
+        cont.add(label(-hh + Math.round(138 * cardScale), String(n.address), 11, '#bae6fd', true))
 
         cont.setSize(cardW, cardH)
         cont.setInteractive({ draggable: true, useHandCursor: true })
@@ -241,7 +247,8 @@ export class GraphSystemScene extends Phaser.Scene {
 
     redraw()
 
-    this._textButton(this.scale.width / 2, slotY + cardH / 2 + 52, 'Lock in order', () => {
+    const btnY = isMobile ? (this.scale.height - 28) : (slotY + cardH / 2 + 52)
+    this._textButton(this.scale.width / 2, btnY, 'Lock in order', () => {
       if (this._blockedInput() || this._blocked) return
       if (isCorrectLinkedListOrder(orderIds, correct)) {
         this._emitResult(true)
@@ -266,21 +273,84 @@ export class GraphSystemScene extends Phaser.Scene {
     let opIdx = 0
     let emittedComplete = false
 
-    const ringCy = H * 0.32
-    const ringR = Math.min(100, W * 0.15)
+    const isMobile = H < 360 || W < 700
+    const scaleFactor = isMobile ? Math.max(0.68, Math.min(W / 720, H / 380)) : 1.0
 
-    const bankTop = H * 0.14
-    const chipSize = 44
-    const chipHalf = chipSize / 2
-    const chipGap = 50
+    const ringCy = isMobile ? H * 0.5 : H * 0.32
+    
+    let sockW = 86
+    let sockH = 88
+    let chipSize = 44
+    let chipHalf = chipSize / 2
+    let chipGap = 50
+    let ringR = Math.min(100, W * 0.15)
+    let slotSize = 52
+    let slotHalf = slotSize / 2
 
-    /** Wider vertical gap so PUSH / POP panels never overlap */
-    const sockW = 86
-    const sockH = 88
-    const pushCX = W - 76
-    const pushCY = H * 0.1
-    const popCX = W - 76
-    const popCY = H * 0.82
+    let fontSizeVal = 12
+    let fontSizeLab = 11
+    let fontSizeHint = 10
+    let fontSizeSlot = 16
+    let fontSizeIdx = 10
+    let fontSizeAnnot = 10
+
+    let pushCX = W - 76
+    let pushCY = H * 0.1
+    let popCX = W - 76
+    let popCY = H * 0.82
+
+    let tlX = 52
+    let tlY0 = H * 0.1
+    let tlStep = Math.min(36, Math.max(22, (H * 0.62) / Math.max(plan.length, 1)))
+    let hintWrap = Math.min(200, Math.max(110, W * 0.24))
+    let bankX = 0
+    let ringCx = W * 0.56
+
+    if (isMobile) {
+      sockW = Math.round(86 * scaleFactor)
+      sockH = Math.round(88 * scaleFactor)
+      chipSize = Math.round(44 * scaleFactor)
+      chipHalf = chipSize / 2
+      chipGap = Math.round(48 * scaleFactor)
+      slotSize = Math.round(52 * scaleFactor)
+      slotHalf = slotSize / 2
+
+      fontSizeVal = Math.max(9, Math.round(12 * scaleFactor))
+      fontSizeLab = Math.max(9, Math.round(11 * scaleFactor))
+      fontSizeHint = Math.max(8, Math.round(10 * scaleFactor))
+      fontSizeSlot = Math.max(11, Math.round(16 * scaleFactor))
+      fontSizeIdx = Math.max(8, Math.round(10 * scaleFactor))
+      fontSizeAnnot = Math.max(8, Math.round(10 * scaleFactor))
+
+      pushCX = W - (sockW / 2 + 12)
+      pushCY = H * 0.24
+      popCX = W - (sockW / 2 + 12)
+      popCY = H * 0.76
+
+      tlX = Math.round(16 + 20 * scaleFactor)
+      tlY0 = Math.round(H * 0.12)
+      tlStep = Math.round((H * 0.76) / Math.max(plan.length, 1))
+      hintWrap = Math.round(W * 0.22)
+
+      const timelineHintsRight = tlX + Math.round(16 * scaleFactor) + hintWrap + 10
+      bankX = timelineHintsRight + chipHalf + 6
+
+      const leftLimit = bankX + chipHalf + 12
+      const rightLimit = pushCX - sockW / 2 - 12
+      ringCx = (leftLimit + rightLimit) / 2
+
+      const maxRingR = (rightLimit - leftLimit) / 2 - slotHalf - 4
+      ringR = Math.max(48, Math.min(68, maxRingR))
+    } else {
+      const timelineHintsRight = tlX + 28 + hintWrap + 14
+      bankX = Math.min(W - sockW - 24, Math.max(timelineHintsRight + chipHalf + 10, timelineHintsRight + chipHalf))
+      ringCx = W * 0.56
+      if (bankX + chipHalf > ringCx - ringR - 12) {
+        ringCx = Math.min(W - ringR - 28, bankX + chipHalf + ringR + 22)
+      }
+    }
+
+    const bankTop = isMobile ? (H * 0.5 - ((R.bankLetters.length - 1) * chipGap) / 2) : H * 0.14
     const pushZone = new Phaser.Geom.Rectangle(pushCX - sockW / 2, pushCY - sockH / 2, sockW, sockH)
     const popZone = new Phaser.Geom.Rectangle(popCX - sockW / 2, popCY - sockH / 2, sockW, sockH)
 
@@ -388,16 +458,18 @@ export class GraphSystemScene extends Phaser.Scene {
       const hh = sockH / 2
       g.fillStyle(0x18181b, 0.94)
       g.lineStyle(2, 0xa1a1aa, 0.45)
-      g.fillRoundedRect(-hw, -hh, sockW, sockH, 12)
-      g.strokeRoundedRect(-hw, -hh, sockW, sockH, 12)
+      g.fillRoundedRect(-hw, -hh, sockW, sockH, Math.round(12 * scaleFactor))
+      g.strokeRoundedRect(-hw, -hh, sockW, sockH, Math.round(12 * scaleFactor))
       c.add(g)
-      c.add(mkText(0, -26, title, 12, '#fafafa', true))
-      c.add(mkText(0, 2, sub, 9, '#a3a3a3'))
+      c.add(mkText(0, Math.round(-26 * scaleFactor), title, fontSizeVal, '#fafafa', true))
+      if (!isMobile) {
+        c.add(mkText(0, 2, sub, 9, '#a3a3a3'))
+      }
       c.add(
         this.add
           .graphics()
           .lineStyle(2, 0xe4e4e7, 0.22)
-          .strokeRoundedRect(-30, 22, 60, 26, 8),
+          .strokeRoundedRect(Math.round(-30 * scaleFactor), Math.round(22 * scaleFactor), Math.round(60 * scaleFactor), Math.round(26 * scaleFactor), Math.round(8 * scaleFactor)),
       )
       return c
     }
@@ -405,7 +477,8 @@ export class GraphSystemScene extends Phaser.Scene {
     paintSocket(pushCX, pushCY, 'PUSH', 'Drop next value')
     paintSocket(popCX, popCY, 'POP', 'Drop front value')
 
-    const progress = mkText(W / 2, H * 0.82, '', 12, '#d4d4d8')
+    const progressY = isMobile ? H * 0.88 : H * 0.82
+    const progress = mkText(W / 2, progressY, '', fontSizeVal, '#d4d4d8')
     progress.setDepth(DEPTH_UI)
 
     const paintTimeline = () => {
@@ -431,8 +504,8 @@ export class GraphSystemScene extends Phaser.Scene {
         row.g.clear()
         row.g.fillStyle(fill, alpha)
         row.g.lineStyle(cur ? 2.5 : 1.5, stroke, strokeA)
-        row.g.fillCircle(0, 0, 16)
-        row.g.strokeCircle(0, 0, 16)
+        row.g.fillCircle(0, 0, Math.round(16 * scaleFactor))
+        row.g.strokeCircle(0, 0, Math.round(16 * scaleFactor))
         const inner = step.op === 'enqueue' ? String(step.value ?? '?') : '−'
         row.val.setText(inner)
         row.val.setAlpha(cur ? 1 : done ? 0.85 : 0.55)
@@ -440,16 +513,12 @@ export class GraphSystemScene extends Phaser.Scene {
       })
     }
 
-    const tlX = 52
-    const tlY0 = H * 0.1
-    const tlStep = Math.min(36, Math.max(22, (H * 0.62) / Math.max(plan.length, 1)))
-    const hintWrap = Math.min(200, Math.max(110, W * 0.24))
     plan.forEach((step, i) => {
       const cy = tlY0 + i * tlStep + tlStep * 0.45
       const cont = this.add.container(tlX, cy).setDepth(DEPTH_GRAPH + 3)
       const g = this.add.graphics()
-      const val = mkText(0, 0, '', 12, '#fafafa', true)
-      const lab = mkText(0, -24, stepLetters[i % 4], 11, '#d4d4d4', true)
+      const val = mkText(0, 0, '', fontSizeVal, '#fafafa', true)
+      const lab = mkText(0, Math.round(-24 * scaleFactor), stepLetters[i % 4], fontSizeLab, '#d4d4d4', true)
       const sl = stepLetters[i % 4]
       let hintLines = ''
       if (step.op === 'enqueue') {
@@ -460,9 +529,9 @@ export class GraphSystemScene extends Phaser.Scene {
         hintLines = `${sl}: Drag the "${dv}" chip to the POP socket (bottom right). It is the front value.`
       }
       const hint = this.add
-        .text(28, 0, hintLines, {
+        .text(Math.round(28 * scaleFactor), 0, hintLines, {
           fontFamily: LL_FONT,
-          fontSize: '10px',
+          fontSize: `${fontSizeHint}px`,
           color: '#c8c8c8',
           fontStyle: '500',
           wordWrap: { width: hintWrap },
@@ -476,13 +545,6 @@ export class GraphSystemScene extends Phaser.Scene {
       cont.add(hint)
       timelineItems.push({ g, lab, val, hint, step })
     })
-    /** Right edge of timeline + hint column; chips stay to the right of this + margin. */
-    const timelineHintsRight = tlX + 28 + hintWrap + 14
-    const bankX = Math.min(W - sockW - 24, Math.max(timelineHintsRight + chipHalf + 10, timelineHintsRight + chipHalf))
-    let ringCx = W * 0.56
-    if (bankX + chipHalf > ringCx - ringR - 12) {
-      ringCx = Math.min(W - ringR - 28, bankX + chipHalf + ringR + 22)
-    }
 
     if (plan.length > 1) {
       const gLine = this.add.graphics().setDepth(DEPTH_GRAPH + 2)
@@ -514,30 +576,30 @@ export class GraphSystemScene extends Phaser.Scene {
       const tailIdx = state.size > 0 ? (state.head + state.size - 1) % cap : -1
       for (let i = 0; i < cap; i += 1) {
         const angle = (i / cap) * Math.PI * 2 - Math.PI / 2
-        const px = ringCx + (ringR - 22) * Math.cos(angle)
-        const py = ringCy + (ringR - 22) * Math.sin(angle)
+        const px = ringCx + (ringR - slotHalf + 4) * Math.cos(angle)
+        const py = ringCy + (ringR - slotHalf + 4) * Math.sin(angle)
         const cont = this.add.container(px, py).setDepth(DEPTH_GRAPH + 1)
         const g = this.add.graphics()
         const isHead = i === headIdx && state.size > 0
         const isTail = i === tailIdx && state.size > 0
         g.fillStyle(isHead ? 0x450a0a : 0x18181b, isHead ? 0.55 : 0.92)
         g.lineStyle(2, isHead ? 0xf87171 : isTail ? 0x34d399 : 0x3f3f46, isHead ? 0.95 : isTail ? 0.75 : 0.55)
-        g.fillRoundedRect(-26, -26, 52, 52, 12)
-        g.strokeRoundedRect(-26, -26, 52, 52, 12)
+        g.fillRoundedRect(-slotHalf, -slotHalf, slotSize, slotSize, Math.round(12 * scaleFactor))
+        g.strokeRoundedRect(-slotHalf, -slotHalf, slotSize, slotSize, Math.round(12 * scaleFactor))
         cont.add(g)
         const letter = state.buf[i] == null ? '·' : String(state.buf[i])
-        cont.add(mkText(0, 0, letter, 16, isHead ? '#fef2f2' : '#fafafa', true))
-        const ix = ringCx + (ringR + 26) * Math.cos(angle)
-        const iy = ringCy + (ringR + 26) * Math.sin(angle)
+        cont.add(mkText(0, 0, letter, fontSizeSlot, isHead ? '#fef2f2' : '#fafafa', true))
+        const ix = ringCx + (ringR + slotHalf + 8) * Math.cos(angle)
+        const iy = ringCy + (ringR + slotHalf + 8) * Math.sin(angle)
         const idxT = this.add
-          .text(ix, iy, String(i), { fontFamily: LL_FONT, fontSize: '10px', color: '#737373' })
+          .text(ix, iy, String(i), { fontFamily: LL_FONT, fontSize: `${fontSizeIdx}px`, color: '#737373' })
           .setOrigin(0.5)
           .setDepth(DEPTH_GRAPH)
         slotIndexTexts.push(idxT)
         slotBlobs.push(cont)
       }
       if (state.size > 0 && headIdx >= 0) {
-        const rad = ringR + 44
+        const rad = ringR + slotHalf + 18
         const ah = (headIdx / cap) * Math.PI * 2 - Math.PI / 2
         const ax = ringCx + rad * Math.cos(ah)
         const ay = ringCy + rad * Math.sin(ah)
@@ -545,9 +607,9 @@ export class GraphSystemScene extends Phaser.Scene {
         const tx = ringCx + rad * Math.cos(th)
         const ty = ringCy + rad * Math.sin(th)
         /** dequeue index: REAR; enqueue index: FRONT (labels swapped from earlier mistake). */
-        const tHead = mkText(ax, ay - 10, '\u25C0 REAR', 10, '#6ee7b7', true)
+        const tHead = mkText(ax, ay - 10, '\u25C0 REAR', fontSizeAnnot, '#6ee7b7', true)
         ringAnnot.push(tHead)
-        const tTail = mkText(tx, ty + 10, 'FRONT \u25B6', 10, '#fca5a5', true)
+        const tTail = mkText(tx, ty + 10, 'FRONT \u25B6', fontSizeAnnot, '#fca5a5', true)
         ringAnnot.push(tTail)
       }
       drawRingTrack()
@@ -571,10 +633,10 @@ export class GraphSystemScene extends Phaser.Scene {
       const body = this.add.graphics()
       body.fillStyle(0x172554, 0.96)
       body.lineStyle(2, 0x38bdf8, 0.75)
-      body.fillRoundedRect(-chipHalf, -chipHalf, chipSize, chipSize, 12)
-      body.strokeRoundedRect(-chipHalf, -chipHalf, chipSize, chipSize, 12)
+      body.fillRoundedRect(-chipHalf, -chipHalf, chipSize, chipSize, Math.round(12 * scaleFactor))
+      body.strokeRoundedRect(-chipHalf, -chipHalf, chipSize, chipSize, Math.round(12 * scaleFactor))
       cont.add(body)
-      const t = mkText(0, 0, display, 16, '#fafafa', true)
+      const t = mkText(0, 0, display, fontSizeSlot, '#fafafa', true)
       cont.add(t)
       cont.setSize(chipSize, chipSize)
       cont.setInteractive({ draggable: true, useHandCursor: true })
@@ -673,11 +735,12 @@ export class GraphSystemScene extends Phaser.Scene {
   }
 
   _buildDfs(T) {
-    const padX = 14
-    const padTop = 40
-    const actionBarH = 56
-    const seqBlockH = 36
-    const padBottom = actionBarH + seqBlockH + 18
+    const isMobile = this.scale.height < 360 || this.scale.width < 700
+    const padX = isMobile ? 8 : 14
+    const padTop = isMobile ? 20 : 40
+    const actionBarH = isMobile ? 40 : 56
+    const seqBlockH = isMobile ? 24 : 36
+    const padBottom = actionBarH + seqBlockH + (isMobile ? 10 : 18)
     const gw = this.scale.width - padX * 2
     const gh = this.scale.height - padTop - padBottom
 
@@ -736,7 +799,7 @@ export class GraphSystemScene extends Phaser.Scene {
     this._dfsSeqText = this.add
       .text(padX, seqY, '', {
         fontFamily: LL_FONT,
-        fontSize: '13px',
+        fontSize: isMobile ? '11px' : '13px',
         color: '#a8a29e',
         wordWrap: { width: this.scale.width - padX * 2 },
       })
@@ -798,13 +861,13 @@ export class GraphSystemScene extends Phaser.Scene {
 
     redrawNodes()
 
-    const barY = this.scale.height - actionBarH / 2 - 10
-    const btnW = Math.min(168, (this.scale.width - 48) / 2 - 8)
-    const gap = 12
+    const barY = this.scale.height - actionBarH / 2 - (isMobile ? 6 : 10)
+    const btnW = Math.min(isMobile ? 148 : 168, (this.scale.width - (isMobile ? 32 : 48)) / 2 - (isMobile ? 6 : 8))
+    const gap = isMobile ? 8 : 12
     const cx = this.scale.width / 2
     const offset = btnW / 2 + gap / 2
 
-    this._pillButton(cx - offset, barY, btnW, 44, 'Lock traversal', 'primary', () => {
+    this._pillButton(cx - offset, barY, btnW, isMobile ? 32 : 44, 'Lock traversal', 'primary', () => {
       if (this._blockedInput() || this._blocked) return
       const full =
         sequence.length === nTotal &&
@@ -823,7 +886,7 @@ export class GraphSystemScene extends Phaser.Scene {
       this._emitResult(true)
     }).setDepth(DEPTH_UI + 2)
 
-    this._pillButton(cx + offset, barY, btnW, 44, 'Reset', 'secondary', () => {
+    this._pillButton(cx + offset, barY, btnW, isMobile ? 32 : 44, 'Reset', 'secondary', () => {
       if (this._blockedInput() || this._blocked) return
       sequence = []
       redrawNodes()
@@ -840,6 +903,7 @@ export class GraphSystemScene extends Phaser.Scene {
    * @param {() => void} onClick
    */
   _pillButton(cx, cy, w, h, label, variant, onClick) {
+    const isMobile = this.scale.height < 360 || this.scale.width < 700
     const cont = this.add.container(cx, cy)
     const g = this.add.graphics()
     const isPrimary = variant === 'primary'
@@ -858,7 +922,7 @@ export class GraphSystemScene extends Phaser.Scene {
     const txt = this.add
       .text(0, 0, label, {
         fontFamily: LL_FONT,
-        fontSize: isPrimary ? '15px' : '14px',
+        fontSize: isMobile ? (isPrimary ? '12px' : '11px') : (isPrimary ? '15px' : '14px'),
         color: isPrimary ? '#fff7f7' : '#f5f5f5',
         fontStyle: '600',
       })
