@@ -115,15 +115,31 @@ export function sampleSessionQuestions(bank, opts = {}) {
   )
 
   const sysBank = bank.system_architecture || {}
-  const variants = [
-    { key: 'linked_list_memory', available: Boolean(sysBank.linked_list_memory) },
-    { key: 'circular_queue', available: Boolean(sysBank.circular_queue) },
-    { key: 'circular_queue_alt', available: Boolean(sysBank.circular_queue_alt) },
-    { key: 'dfs_tree', available: Boolean(sysBank.dfs_tree) },
-  ].filter((v) => v.available)
+  const hasLinkedList = Boolean(sysBank.linked_list_memory)
+  const hasRingMain = Boolean(sysBank.circular_queue)
+  const hasRingAlt = Boolean(sysBank.circular_queue_alt)
+  const hasRing = hasRingMain || hasRingAlt
+  const hasTree = Boolean(sysBank.dfs_tree)
 
-  const pickOrder = variants.length ? variants.map((v) => v.key) : ['dfs_tree']
-  const sysKey = pickOrder[h % pickOrder.length] ?? pickOrder[0]
+  /** One slot each: linked list, ring family, DFS — not two slots for two ring templates. */
+  const families = []
+  if (hasLinkedList) families.push('linked_list_memory')
+  if (hasRing) families.push('__ring__')
+  if (hasTree) families.push('dfs_tree')
+
+  let sysKey = 'dfs_tree'
+  if (families.length > 0) {
+    const fam = families[h % families.length]
+    if (fam === 'linked_list_memory') sysKey = 'linked_list_memory'
+    else if (fam === 'dfs_tree') sysKey = 'dfs_tree'
+    else {
+      const ringKeys = []
+      if (hasRingMain) ringKeys.push('circular_queue')
+      if (hasRingAlt) ringKeys.push('circular_queue_alt')
+      sysKey = ringKeys[(h >>> 8) % ringKeys.length] ?? 'circular_queue'
+    }
+  }
+
   const sys = buildSystemQuestion(bank, sysKey, rng)
   if (sys && !used.has(sys.id)) used.add(sys.id)
   if (sys) {
