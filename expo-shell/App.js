@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 
 // Dev server fallback URL (useful for hot-reloading in emulators / Expo Go)
 // Replace with your local machine's IP address (e.g., http://192.168.1.100:5173) if testing on a physical device.
-const DEV_SERVER_URL = 'http://192.168.13.85:5173';
+const DEV_SERVER_URL = 'http://192.168.100.50:5173';
 
 // Set this to true to force loading the local bundled static files for offline testing
 const FORCE_OFFLINE_STANDALONE = false;
