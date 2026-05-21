@@ -16,6 +16,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.hadim.ronin",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -26,7 +27,19 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-asset"
-    ]
+      [
+        "expo-asset",
+        {
+          "assets": [
+            "./assets/www"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a35ce472-6ea7-4b40-a675-069d4363606c"
+      }
+    }
   }
 }
