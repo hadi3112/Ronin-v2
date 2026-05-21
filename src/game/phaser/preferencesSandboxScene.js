@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
-import { assetUrl } from './assetUrl.js'
-import { COLORS, EASE } from './phaserDesignTokens.js'
+import { COLORS, EASE, getDPR } from './phaserDesignTokens.js'
+import bossImg from '../../../public/images/samurai_red.png'
 
 /** Horizontal offset of red samurai from canvas center (px, Phaser space). */
 const PREF_SAMURAI_OFFSET_X = 28
@@ -12,7 +12,7 @@ export class PreferencesSandboxScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('red_samurai', assetUrl('images/samurai_red.png'))
+    this.load.image('red_samurai', bossImg)
     this.load.once('loaderror', (file) => {
       console.warn('[GameCanvas] preferences asset failed', file?.key, file?.url)
     })

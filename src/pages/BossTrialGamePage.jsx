@@ -8,7 +8,7 @@ import SessionReviewView from '../features/game/SessionReviewView.jsx'
 import AgentToast from '../components/ui/AgentToast.jsx'
 import SessionExpansionBanner from '../features/game/SessionExpansionBanner.jsx'
 import { useAdaptiveBossTrialGame } from '../features/game/hooks/useAdaptiveBossTrialGame.js'
-import { mockProfile } from '../data/mockUser.js'
+import { mockProfile, updateXP } from '../data/mockUser.js'
 import { generateSessionId } from '../game/sessionId.js'
 import { useAuth } from '../hooks/useAuth.js'
 
@@ -36,6 +36,10 @@ function SessionOutcome({
   const xpEnd = Math.min(xpGoal, xpStart + xpGain)
   const pctStart = Math.min(100, (xpStart / xpGoal) * 100)
   const pctEnd = Math.min(100, (xpEnd / xpGoal) * 100)
+
+  useEffect(() => {
+    updateXP(xpEnd)
+  }, [xpEnd])
 
   let title = 'Session complete'
   let subtitle = 'Boss Trial closed.'

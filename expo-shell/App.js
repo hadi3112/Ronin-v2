@@ -4,23 +4,24 @@ import { WebView } from 'react-native-webview';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
 
+import { useAssets } from 'expo-asset';
+
 // Dev server fallback URL (useful for hot-reloading in emulators / Expo Go)
-const DEV_SERVER_URL = 'http://192.168.181.85:5173';
+const DEV_SERVER_URL = 'http://192.168.100.50:5173';
 
 // Set this to true to force loading the local bundled static files for offline testing
-const FORCE_OFFLINE_STANDALONE = false;
+const FORCE_OFFLINE_STANDALONE = true;
 
 export default function App() {
   const isDev = __DEV__ && !FORCE_OFFLINE_STANDALONE;
+  
+  // This downloads/resolves the HTML file from the Metro bundle to the device cache
+  const [assets] = useAssets([require('./assets/www/index.html')]);
 
-  // Enable Android sticky immersive mode — hides system nav bar,
-  // reappears on bottom-edge swipe, auto-hides after a few seconds.
+  // Edge-to-edge is enabled in app.json, so we don't need to manually configure NavigationBar
+  // Doing so crashes some Samsung devices due to SurfaceFlinger conflicts.
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      NavigationBar.setVisibilityAsync('hidden');
-      NavigationBar.setBehaviorAsync('overlay-swipe');
-      NavigationBar.setBackgroundColorAsync('#0a0a0c');
-    }
+    // Nothing to do for navigation bar anymore
   }, []);
 
   // Select the appropriate source for the WebView
@@ -30,14 +31,12 @@ export default function App() {
       return { uri: DEV_SERVER_URL };
     }
 
-    console.log('📦 Expo WebView: Connecting to locally bundled offline web assets...');
-    if (Platform.OS === 'android') {
-      // Standalone Android builds access local assets folder directly in APK
-      return { uri: 'file:///android_asset/www/index.html' };
+    if (assets && assets.length > 0) {
+      console.log('📦 Expo WebView: Loading compiled single-file HTML asset: ', assets[0].localUri);
+      return { uri: assets[0].localUri };
     }
 
-    // Standalone iOS loads the file bundle
-    return require('./assets/www/index.html');
+    return { html: '<html><body style="background-color: #0a0a0c; color: white; display: flex; justify-content: center; align-items: center; height: 100vh;">Loading assets...</body></html>' };
   };
 
   return (
@@ -49,9 +48,11 @@ export default function App() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         allowFileAccess={true}
+        allowFileAccessFromFileURLs={true}
         allowUniversalAccessFromFileURLs={true}
         originWhitelist={['*']}
         mixedContentMode="always"
+        webviewDebuggingEnabled={true}
         // Performance and canvas optimizations
         decelerationRate={0.998}
         showsHorizontalScrollIndicator={false}

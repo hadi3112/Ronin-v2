@@ -9,7 +9,6 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "build:expo": "node copy-assets.js"
-
   },
   "dependencies": {
     "framer-motion": "^12.23.12",
@@ -32,6 +31,7 @@
     "globals": "^17.5.0",
     "postcss": "^8.5.13",
     "tailwindcss": "^4.2.4",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vite-plugin-singlefile": "^2.3.3"
   }
 }

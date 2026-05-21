@@ -28,6 +28,17 @@ try {
   console.log('🚚 Copying build assets from dist to expo-shell/assets/www...');
   fs.cpSync(distDir, expoWwwDir, { recursive: true });
 
+  // 4. Strip type="module" to fix Android WebView local file CORS blocking
+  const indexPath = path.join(expoWwwDir, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    let indexHtml = fs.readFileSync(indexPath, 'utf-8');
+    indexHtml = indexHtml.replace(/type="module" crossorigin/g, 'defer');
+    indexHtml = indexHtml.replace(/type="module"/g, 'defer');
+    indexHtml = indexHtml.replace(/<link rel="modulepreload"[^>]*>/g, '');
+    fs.writeFileSync(indexPath, indexHtml);
+    console.log('🛠️ Stripped ES module tags from index.html for WebView compatibility.');
+  }
+
   console.log('✨ Success! Assets successfully compiled and bridged to Expo shell.');
 } catch (error) {
   console.error('❌ Failed during build and asset bridging:', error.message);

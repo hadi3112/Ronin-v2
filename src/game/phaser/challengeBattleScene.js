@@ -1,8 +1,13 @@
 import Phaser from 'phaser'
-import { assetUrl } from './assetUrl.js'
 import { CombatVisualState, COMBAT_TIMINGS_MS } from '../CombatStateMachine.js'
 import { playSlashEffect, SLASH_FX_DEPTH } from './slashEffect.js'
 import { COLORS, STROKE, EASE, FONT, getDPR } from './phaserDesignTokens.js'
+
+import mascotImg from '../../../public/images/mascot_img.png'
+import mascotFbImg from '../../../public/images/ronin-mascot.png'
+import bossImg from '../../../public/images/samurai_red.png'
+import roninSwordImg from '../../../public/images/ronin_sword.png'
+import redsSwordImg from '../../../public/images/reds_sword.png'
 
 /** Boss sprite sits this many px lower than Ronin baseline (Phaser coordinates). */
 export const BOSS_TRIAL_BOSS_Y_OFFSET_PX = 22
@@ -93,11 +98,11 @@ export class ChallengeBattleScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('ronin', assetUrl('images/mascot_img.png'))
-    this.load.image('ronin_fb', assetUrl('images/ronin-mascot.png'))
-    this.load.image('boss', assetUrl('images/samurai_red.png'))
-    this.load.image('ronin_sword', assetUrl('images/ronin_sword.png'))
-    this.load.image('reds_sword', assetUrl('images/reds_sword.png'))
+    this.load.image('ronin', mascotImg)
+    this.load.image('ronin_fb', mascotFbImg)
+    this.load.image('boss', bossImg)
+    this.load.image('ronin_sword', roninSwordImg)
+    this.load.image('reds_sword', redsSwordImg)
     this.load.once('loaderror', (file) => {
       console.warn('[ChallengeBattleScene] load error', file?.key, file?.url)
     })
