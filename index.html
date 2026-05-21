@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/images/ronin-app-icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" id="viewport-meta" />
     <title>.Ronin — Gamified Coding</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,6 +11,15 @@
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function() {
+        var isAndroid = /Android/i.test(navigator.userAgent);
+        if (isAndroid) {
+          var vp = document.getElementById('viewport-meta');
+          if (vp) vp.content = 'width=device-width, initial-scale=0.60, maximum-scale=0.60, user-scalable=0';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -7,13 +7,19 @@ import { GraphSystemScene } from '../game/phaser/graphSystem/GraphSystemScene.js
 /** Phaser fires this on {@link Phaser.Game} when the core systems are up. */
 const GAME_READY = Phaser.Core?.Events?.READY ?? 'ready'
 
+export const GRAPH_ACTION_EVENT = 'ronin-graph-action'
+
+export function triggerGraphAction(questionId, action) {
+  window.dispatchEvent(new CustomEvent(GRAPH_ACTION_EVENT, { detail: { questionId, action } }))
+}
+
 /**
  * Phaser-only graph system challenges (linked list, circular buffer, DFS tree).
  * React listens on {@link GRAPH_CHALLENGE_EVENT} for ANSWER_* only.
  *
- * @param {{ subtype: string; payload: object; disabled: boolean; onSubmit: (ok: boolean) => void; questionId: string; onBusDetail?: (detail: object) => void }} props
+ * @param {{ subtype: string; payload: object; disabled: boolean; onSubmit: (ok: boolean) => void; questionId: string; onBusDetail?: (detail: object) => void; hideButtons?: boolean }} props
  */
-export default function GraphChallengeCanvas({ subtype, payload, disabled, onSubmit, questionId, onBusDetail }) {
+export default function GraphChallengeCanvas({ subtype, payload, disabled, onSubmit, questionId, onBusDetail, hideButtons = false }) {
   const parentRef = useRef(null)
   const gameRef = useRef(null)
   const disabledRef = useRef(disabled)
@@ -61,6 +67,8 @@ export default function GraphChallengeCanvas({ subtype, payload, disabled, onSub
     const w = Math.max(320, Math.floor(rect.width) || parent.clientWidth || 520, 1)
     const h = Math.max(isMobile ? 280 : 400, Math.floor(rect.height) || parent.clientHeight || 440, 1)
 
+    const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1))
+
     const game = new Phaser.Game({
       type: Phaser.AUTO,
       parent,
@@ -69,7 +77,9 @@ export default function GraphChallengeCanvas({ subtype, payload, disabled, onSub
       backgroundColor: '#0b0b0c',
       banner: false,
       antialias: true,
-      roundPixels: false,
+      roundPixels: true,
+      pixelArt: false,
+      resolution: dpr,
       audio: false,
     })
     gameRef.current = game
@@ -100,6 +110,7 @@ export default function GraphChallengeCanvas({ subtype, payload, disabled, onSub
             package: pkg,
             questionId,
             getDisabled: () => disabledRef.current,
+            hideButtons,
           })
           return
         }

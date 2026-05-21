@@ -12,16 +12,16 @@ function rndInt(rng, lo, hi) {
 
 /** @typedef {{ id: number; level: number; children: TreeNodeRec[] }} TreeNodeRec */
 
-function buildRecursive(level, rng, nextIdRef) {
+function buildRecursive(level, rng, nextIdRef, maxDepth = 3, maxBranching = 3) {
   const id = nextIdRef.v++
-  if (level >= 3) {
+  if (level >= maxDepth) {
     return { id, level, children: [] }
   }
-  let k = rndInt(rng, 2, 3)
+  let k = rndInt(rng, 2, maxBranching)
   if (level === 0) k = Math.max(2, k)
   const children = []
   for (let i = 0; i < k; i += 1) {
-    children.push(buildRecursive(level + 1, rng, nextIdRef))
+    children.push(buildRecursive(level + 1, rng, nextIdRef, maxDepth, maxBranching))
   }
   return { id, level, children }
 }
@@ -121,10 +121,14 @@ export function computeLayoutFromTree(rootRec) {
 
 /**
  * @param {() => number} rng
+ * @param {number} [maxBranching=3] - Max children per node (2-4)
+ * @param {number} [maxDepth=3] - Tree depth (2-5)
  */
-export function buildDfsTreePayload(rng) {
+export function buildDfsTreePayload(rng, maxBranching = 3, maxDepth = 3) {
+  const branching = Math.max(2, Math.min(4, maxBranching))
+  const depth = Math.max(2, Math.min(5, maxDepth))
   const nextIdRef = { v: 1 }
-  const rootRec = buildRecursive(0, rng, nextIdRef)
+  const rootRec = buildRecursive(0, rng, nextIdRef, depth, branching)
   /** @type {TreeNodeFlat[]} */
   const flat = []
   flatten(rootRec, null, flat)

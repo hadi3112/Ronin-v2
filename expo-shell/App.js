@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
 
 // Dev server fallback URL (useful for hot-reloading in emulators / Expo Go)
-const DEV_SERVER_URL = 'http://192.168.13.85:5173';
+const DEV_SERVER_URL = 'http://192.168.181.85:5173';
 
 // Set this to true to force loading the local bundled static files for offline testing
 const FORCE_OFFLINE_STANDALONE = false;

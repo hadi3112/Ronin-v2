@@ -7,6 +7,8 @@ import GameCanvas from '../components/GameCanvas.jsx'
 import NeonButton from '../components/ui/NeonButton.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 
+const IS_ANDROID = /Mobi|Android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+
 const interests = ['HTML', 'Machine Learning', 'JavaScript', 'C++', 'CSS', 'Rust', 'Python 3.0', 'Java', 'Solidity']
 const skills = ['Beginner', 'Intermediate', 'Advanced']
 const styles = ['Tutorial heavy', 'Challenge heavy', 'Balanced']
@@ -89,7 +91,7 @@ export default function PreferencesPage() {
       <div className="relative z-10 mx-auto max-w-6xl rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-ronin backdrop-blur-xl md:p-10">
         <div className={`grid gap-8 ${isMobileLandscape ? 'grid-cols-[1.2fr_0.8fr]' : 'lg:grid-cols-[1.2fr_0.8fr]'}`}>
           <section>
-            <h1 className="max-w-md text-4xl font-bold leading-tight text-ronin-cream md:text-5xl">
+            <h1 className={`max-w-md font-bold leading-tight text-ronin-cream ${IS_ANDROID ? 'text-xl md:text-5xl' : 'text-4xl md:text-5xl'}`}>
               Let&apos;s personalize your preferences
             </h1>
             <p className="mt-3 max-w-xl text-base text-ronin-muted">
@@ -161,7 +163,8 @@ export default function PreferencesPage() {
           <div className="flex min-h-0 flex-col gap-4">
             <GameCanvas
               variant="preferences"
-              className={`relative flex w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-black/20 p-6 shadow-none ${isMobileLandscape ? 'min-h-[200px]' : 'min-h-[300px]'}`}
+              heightOverride={IS_ANDROID ? 144 : undefined}
+              className={`relative flex w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-black/20 p-6 shadow-none ${IS_ANDROID ? 'min-h-[144px]' : isMobileLandscape ? 'min-h-[200px]' : 'min-h-[300px]'}`}
             />
             <p className="text-center text-sm text-ronin-muted">Build your dojo path: code, challenge, master.</p>
           </div>

@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { assetUrl } from './assetUrl.js'
 import { CombatVisualState, COMBAT_TIMINGS_MS } from '../CombatStateMachine.js'
 import { playSlashEffect, SLASH_FX_DEPTH } from './slashEffect.js'
+import { COLORS, STROKE, EASE, FONT, getDPR } from './phaserDesignTokens.js'
 
 /** Boss sprite sits this many px lower than Ronin baseline (Phaser coordinates). */
 export const BOSS_TRIAL_BOSS_Y_OFFSET_PX = 22
@@ -66,13 +67,13 @@ function strikeBeat(visual) {
 /** Ronin glow reduced ~60% vs prior (outer 3→1, quality 6→2). */
 function applyRoninGlow(sprite) {
   if (sprite?.postFX?.addGlow) {
-    sprite.postFX.addGlow(0xffffff, 1, 1, false, 0.11, 2)
+    sprite.postFX.addGlow(COLORS.RONIN_GLOW, 1, 1, false, 0.11, 2)
   }
 }
 
 function applyBossGlow(sprite) {
   if (sprite?.postFX?.addGlow) {
-    sprite.postFX.addGlow(0x881144, 3, 1, false, 0.11, 6)
+    sprite.postFX.addGlow(COLORS.BOSS_GLOW, 3, 1, false, 0.11, 6)
   }
 }
 
@@ -107,12 +108,20 @@ export class ChallengeBattleScene extends Phaser.Scene {
     const H = this.scale.height
     const floorY = H * 0.82
 
-    this.add.rectangle(W / 2, H * 0.42, W, H * 0.88, 0x16110e, 1).setDepth(1)
-    this.add.rectangle(W / 2, H * 0.88, W, H * 0.28, 0x0c0a08, 0.94).setDepth(2)
+    this.add.rectangle(W / 2, H * 0.42, W, H * 0.88, COLORS.ARENA_UPPER, 1).setDepth(1)
+    this.add.rectangle(W / 2, H * 0.88, W, H * 0.28, COLORS.ARENA_LOWER, 0.94).setDepth(2)
     this.add
-      .rectangle(W / 2, H * 0.72, W * 0.85, H * 0.22, 0x2a1f18, 0.35)
+      .rectangle(W / 2, H * 0.72, W * 0.85, H * 0.22, COLORS.ARENA_RING, 0.35)
       .setStrokeStyle(1, 0x5c4030, 0.4)
       .setDepth(3)
+
+    // Faint floor accent line
+    const floorLine = this.add.graphics().setDepth(4)
+    floorLine.lineStyle(1, 0xffffff, 0.04)
+    floorLine.beginPath()
+    floorLine.moveTo(0, floorY)
+    floorLine.lineTo(W, floorY)
+    floorLine.strokePath()
 
     this.roninRoot = this.add.container(W * 0.22, floorY).setDepth(8)
     this.bossRoot = this.add.container(W * 0.78, floorY + BOSS_TRIAL_BOSS_Y_OFFSET_PX).setDepth(9)
@@ -170,13 +179,13 @@ export class ChallengeBattleScene extends Phaser.Scene {
       targets: this.roninRoot,
       x: roninX0,
       duration: COMBAT_TIMINGS_MS.DASH * 0.85,
-      ease: 'Cubic.out',
+      ease: EASE.SNAP,
     })
     this.tweens.add({
       targets: this.bossRoot,
       x: bossX0,
       duration: COMBAT_TIMINGS_MS.DASH * 0.85,
-      ease: 'Cubic.out',
+      ease: EASE.SNAP,
     })
 
     if (v === CombatVisualState.RONIN_DASH) this._spawnDashWind(true, roninX0, floorY, W, H)
@@ -190,14 +199,14 @@ export class ChallengeBattleScene extends Phaser.Scene {
     const stagger =
       v === CombatVisualState.BOSS_HIT_STAGGER || v === CombatVisualState.RONIN_HIT_STAGGER
     if (stagger) {
-      this.cameras.main.shake(200, 0.014)
+      this.cameras.main.shake(200, 0.018)
       if (v === CombatVisualState.BOSS_HIT_STAGGER && bossBody) {
         this.tweens.add({
           targets: bossBody,
           alpha: { from: 1, to: 0.28 },
           duration: 55,
           yoyo: true,
-          repeat: 3,
+          repeat: 4,
           ease: 'Sine.inOut',
         })
       }
@@ -207,7 +216,7 @@ export class ChallengeBattleScene extends Phaser.Scene {
           alpha: { from: 1, to: 0.35 },
           duration: 55,
           yoyo: true,
-          repeat: 3,
+          repeat: 4,
           ease: 'Sine.inOut',
         })
       }
@@ -306,8 +315,8 @@ export class ChallengeBattleScene extends Phaser.Scene {
         })
         playSlashEffect(this, {
           direction: 'left-to-right',
-          color: 0x6ee7b7,
-          coreColor: 0xe8fff4,
+          color: COLORS.SLASH_RONIN,
+          coreColor: COLORS.SLASH_RONIN_CORE,
           center: { x: bossX0, y: bossTorsoY },
           span: Math.min(320, W * 0.5),
           arcHeight: Math.min(110, H * 0.28),
@@ -335,8 +344,8 @@ export class ChallengeBattleScene extends Phaser.Scene {
         })
         playSlashEffect(this, {
           direction: 'right-to-left',
-          color: 0xff1744,
-          coreColor: 0xffcdd2,
+          color: COLORS.SLASH_BOSS,
+          coreColor: COLORS.SLASH_BOSS_CORE,
           center: { x: roninX0, y: roninTorsoY },
           span: Math.min(320, W * 0.5),
           arcHeight: Math.min(110, H * 0.28),
@@ -354,20 +363,22 @@ export class ChallengeBattleScene extends Phaser.Scene {
   _spawnDashWind(roninLeftToRight, anchorX, floorY, W, H) {
     const y = floorY - H * 0.08
     const dir = roninLeftToRight ? 1 : -1
-    for (let i = 0; i < 5; i += 1) {
+    for (let i = 0; i < 8; i += 1) {
       const g = this.add.graphics().setDepth(6)
-      const x0 = anchorX - dir * (20 + i * 14)
-      const x1 = anchorX - dir * (110 + i * 22)
-      g.lineStyle(3 - i * 0.35, 0xf5f5f5, 0.22 - i * 0.03)
+      const x0 = anchorX - dir * (18 + i * 12)
+      const x1 = anchorX - dir * (100 + i * 20)
+      const yOff = Math.sin(i * 0.7) * 6
+      g.lineStyle(3 - i * 0.28, COLORS.WIND, 0.2 - i * 0.02)
       g.beginPath()
-      g.moveTo(x0, y + i * 4)
-      g.lineTo(x1, y - 6 - i * 3)
+      g.moveTo(x0, y + i * 3.5)
+      g.lineTo((x0 + x1) / 2, y - 4 - i * 2 + yOff)
+      g.lineTo(x1, y - 6 - i * 2.5)
       g.strokePath()
       this.tweens.add({
         targets: g,
         alpha: 0,
-        duration: 340 + i * 48,
-        ease: 'Cubic.out',
+        duration: 340 + i * 42,
+        ease: EASE.SMOOTH,
         onComplete: () => g.destroy(),
       })
     }

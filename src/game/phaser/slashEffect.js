@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { EASE } from './phaserDesignTokens.js'
 
 /** Default draw order so slashes sit above fighters (Phaser depth). */
 export const SLASH_FX_DEPTH = 520
@@ -15,12 +16,12 @@ function ensureSlashSparkTexture(scene) {
 /** Soft elongated streak stamped along a swipe curve (Phaser textures + tweens). */
 function ensureBladeStreakTexture(scene) {
   if (scene.textures.exists('slash_blade_streak')) return
-  const bw = 72
-  const bh = 14
+  const bw = 128
+  const bh = 24
   const g = scene.make.graphics({ x: 0, y: 0, add: false })
   for (let x = 0; x < bw; x += 1) {
     const k = x / (bw - 1)
-    const a = Math.pow(Math.sin(k * Math.PI), 1.35) * 0.75
+    const a = Math.pow(Math.sin(k * Math.PI), 1.5) * 0.75
     g.fillStyle(0xffffff, a)
     g.fillRect(x, 0, 1, bh)
   }
@@ -119,14 +120,14 @@ export function playSlashEffect(scene, opts) {
     alpha: { from: 0, to: 0.92 },
     duration: 55,
     stagger: staggerMs,
-    ease: 'Cubic.out',
+    ease: EASE.SMOOTH,
     onComplete: () => {
       scene.tweens.add({
         targets: bladeImages,
         alpha: 0,
         duration: Math.max(120, duration * 0.55),
         stagger: Math.max(4, Math.floor(staggerMs * 0.65)),
-        ease: 'Cubic.in',
+        ease: EASE.SMOOTH_IN,
         onComplete: () => {
           bladeImages.forEach((s) => s.destroy())
         },
@@ -142,6 +143,20 @@ export function playSlashEffect(scene, opts) {
     gCore.clear()
     const steps = 40
     const te = Phaser.Math.Clamp(tEnd, 0.03, 1)
+    const stepsEnd = Math.ceil(steps * te)
+
+
+    // Outer bloom glow pass
+    gCore.lineStyle(12, color, 0.12 * state.alpha)
+    gCore.beginPath()
+    for (let i = 0; i <= Math.ceil(steps * te); i += 1) {
+      curve.getPoint(i / steps, point)
+      if (i === 0) gCore.moveTo(point.x, point.y)
+      else gCore.lineTo(point.x, point.y)
+    }
+    gCore.strokePath()
+
+    // Core bright line
     gCore.lineStyle(3, coreColor, 0.95 * state.alpha)
     gCore.beginPath()
     for (let i = 0; i <= Math.ceil(steps * te); i += 1) {
@@ -150,6 +165,8 @@ export function playSlashEffect(scene, opts) {
       else gCore.lineTo(point.x, point.y)
     }
     gCore.strokePath()
+
+    // Mid glow line
     gCore.lineStyle(7, color, 0.28 * state.alpha)
     gCore.beginPath()
     for (let i = 0; i <= Math.ceil(steps * te); i += 1) {
@@ -164,14 +181,14 @@ export function playSlashEffect(scene, opts) {
     targets: state,
     t: 1,
     duration,
-    ease: 'Cubic.out',
+    ease: EASE.SMOOTH,
     onUpdate: () => drawCore(state.t),
     onComplete: () => {
       scene.tweens.add({
         targets: state,
         alpha: 0,
         duration: Math.floor(duration * 0.45),
-        ease: 'Cubic.in',
+        ease: EASE.SMOOTH_IN,
         onUpdate: () => drawCore(1),
         onComplete: () => gCore.destroy(),
       })
@@ -188,7 +205,7 @@ export function playSlashEffect(scene, opts) {
     angle: { min: angleMin, max: angleMax },
     scale: { start: 0.65, end: 0 },
     alpha: { start: 0.95, end: 0 },
-    lifespan: { min: 120, max: 200 },
+    lifespan: { min: 120, max: 260 },
     tint: [color, coreColor],
     blendMode: 'ADD',
     emitting: false,
@@ -196,7 +213,7 @@ export function playSlashEffect(scene, opts) {
   emitter.setDepth(depth + 2)
 
   scene.time.delayedCall(Math.floor(duration * 0.1), () => {
-    emitter.explode(28, burstX, burstY)
+    emitter.explode(36, burstX, burstY)
   })
   scene.time.delayedCall(duration + 380, () => {
     emitter.destroy()

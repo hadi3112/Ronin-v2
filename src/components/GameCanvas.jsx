@@ -22,6 +22,7 @@ export default function GameCanvas({
   maxHp = 100,
   phase = 'playing',
   className = '',
+  heightOverride,
 }) {
   const containerRef = useRef(null)
   const gameRef = useRef(null)
@@ -32,7 +33,9 @@ export default function GameCanvas({
 
     const SceneClass = variant === 'bossBattle' ? ChallengeBattleScene : PreferencesSandboxScene
     const w = variant === 'bossBattle' ? Math.max(300, parent.clientWidth || 520) : 320
-    const h = variant === 'bossBattle' ? Math.max(220, parent.clientHeight || 260) : 288
+    const defaultH = variant === 'bossBattle' ? Math.max(220, parent.clientHeight || 260) : 288
+    const h = heightOverride ?? defaultH
+    const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1))
 
     const game = new Phaser.Game({
       type: Phaser.AUTO,
@@ -44,6 +47,9 @@ export default function GameCanvas({
       banner: false,
       audio: false,
       antialias: true,
+      roundPixels: true,
+      pixelArt: false,
+      resolution: dpr,
       scene: [SceneClass],
       scale: {
         mode: Phaser.Scale.FIT,

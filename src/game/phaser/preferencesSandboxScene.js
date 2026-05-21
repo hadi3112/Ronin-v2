@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { assetUrl } from './assetUrl.js'
+import { COLORS, EASE } from './phaserDesignTokens.js'
 
 /** Horizontal offset of red samurai from canvas center (px, Phaser space). */
 const PREF_SAMURAI_OFFSET_X = 28
@@ -29,7 +30,7 @@ export class PreferencesSandboxScene extends Phaser.Scene {
     if (this.textures.exists('red_samurai')) {
       sprite = this.add.sprite(cx, cy, 'red_samurai').setOrigin(0.5)
     } else {
-      sprite = this.add.rectangle(cx, cy, 64, 96, 0x881144).setStrokeStyle(2, 0xffaaaa)
+      sprite = this.add.rectangle(cx, cy, 64, 96, COLORS.BOSS_GLOW).setStrokeStyle(2, 0xffaaaa)
     }
 
     const texW = sprite.width || 64
@@ -41,18 +42,45 @@ export class PreferencesSandboxScene extends Phaser.Scene {
     sprite.setScale(baseScale)
 
     if (sprite.postFX?.addGlow) {
-      sprite.postFX.addGlow(0x881144, 3, 1, false, 0.11, 6)
+      sprite.postFX.addGlow(COLORS.BOSS_GLOW, 3, 1, false, 0.11, 6)
     }
 
+    // Floating particle ambience
+    if (!this.textures.exists('pref_spark')) {
+      const pg = this.make.graphics({ x: 0, y: 0, add: false })
+      pg.fillStyle(0xffffff, 1)
+      pg.fillCircle(3, 3, 3)
+      pg.generateTexture('pref_spark', 6, 6)
+      pg.destroy()
+    }
+
+    const emitter = this.add.particles(w / 2, h / 2, 'pref_spark', {
+      speed: { min: 8, max: 20 },
+      angle: { min: 250, max: 290 },
+      scale: { start: 0.3, end: 0.1 },
+      alpha: { start: 0.15, end: 0 },
+      lifespan: { min: 3000, max: 5000 },
+      tint: [COLORS.CORAL, COLORS.CRIMSON],
+      blendMode: 'ADD',
+      frequency: 400,
+      quantity: 1,
+      emitZone: {
+        type: 'random',
+        source: new Phaser.Geom.Rectangle(-w / 2, -h / 4, w, h / 2),
+      },
+    })
+    emitter.setDepth((sprite.depth || 0) - 1)
+
+    // Breathing animation
     this.tweens.add({
       targets: sprite,
       y: cy - 8,
       scaleX: baseScale * 1.045,
       scaleY: baseScale * 1.045,
-      duration: 1500,
+      duration: 1800,
       yoyo: true,
       repeat: -1,
-      ease: 'Sine.inOut',
+      ease: EASE.SMOOTH_INOUT,
     })
   }
 }

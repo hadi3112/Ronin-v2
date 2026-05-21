@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import NeonButton from '../components/ui/NeonButton.jsx'
 import BossTrialCombatPanel from '../features/game/BossTrialCombatPanel.jsx'
 import QuestionStage from '../features/game/QuestionStage.jsx'
 import SessionReviewView from '../features/game/SessionReviewView.jsx'
-import { useBossTrialGame } from '../features/game/hooks/useBossTrialGame.js'
+import AgentToast from '../components/ui/AgentToast.jsx'
+import SessionExpansionBanner from '../features/game/SessionExpansionBanner.jsx'
+import { useAdaptiveBossTrialGame } from '../features/game/hooks/useAdaptiveBossTrialGame.js'
 import { mockProfile } from '../data/mockUser.js'
 import { generateSessionId } from '../game/sessionId.js'
 import { useAuth } from '../hooks/useAuth.js'
@@ -137,12 +139,26 @@ export default function BossTrialGamePage() {
   const { user } = useAuth()
   const sessionId = useMemo(() => generateSessionId(), [])
   const userId = user?.uid ?? 'guest'
-  const game = useBossTrialGame({ userId, sessionId })
+  const game = useAdaptiveBossTrialGame({ userId, sessionId })
   const answeredRef = useRef(/** @type {string | null} */ (null))
   const [sessionReviewOpen, setSessionReviewOpen] = useState(false)
   const [quitConfirmOpen, setQuitConfirmOpen] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
   const [isReloading, setIsReloading] = useState(false)
+  const [toasts, setToasts] = useState([])
+  const toastIdRef = useRef(0)
+
+  const addToast = useCallback((message, type = 'default') => {
+    const id = `toast_${toastIdRef.current++}`
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 2500)
+  }, [])
+
+  const dismissToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
 
   useEffect(() => {
     const checkLayout = () => {
@@ -159,11 +175,51 @@ export default function BossTrialGamePage() {
     answeredRef.current = null
   }, [game.index, game.current?.id])
 
+  const gamePhase = game.phase
+  const sessionReviewShouldClose = gamePhase === 'playing' && sessionReviewOpen
   useEffect(() => {
-    if (game.phase === 'playing') setSessionReviewOpen(false)
-  }, [game.phase])
+    if (sessionReviewShouldClose) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSessionReviewOpen(false)
+    }
+  }, [sessionReviewShouldClose])
+
+  const lastXPRef = useRef(0)
+  const questionTypeLabels = {
+    stacktrace: 'Stack Trace',
+    code_completion: 'Code Completion',
+    conceptual: 'Concept Check',
+    linked_list_memory: 'Linked List',
+    dfs_tree: 'DFS Tree',
+    circular_queue: 'Ring Buffer',
+  }
+  
+  useEffect(() => {
+    if (game.latestXPGain > 0 && game.latestXPGain !== lastXPRef.current) {
+      lastXPRef.current = game.latestXPGain
+      const typeLabel = questionTypeLabels[game.lastQuestionType] || 'Question'
+      
+      if (game.lastAnswerCorrect) {
+        addToast(`${typeLabel} correct! +${game.latestXPGain} XP`, 'xp')
+      } else {
+        addToast(`Incorrect answer. +${game.latestXPGain} XP`, 'evaluation')
+      }
+      
+      if (game.latestStreakLabel) {
+        const streakMsg = game.expansion 
+          ? `${game.latestStreakLabel} Increasing difficulty, more questions ahead!`
+          : game.latestStreakLabel
+        setTimeout(() => addToast(streakMsg, 'streak'), 400)
+      }
+    }
+  }, [game.latestXPGain, game.latestStreakLabel, game.lastAnswerCorrect, game.lastQuestionType, game.expansion, addToast])
 
   const busy = game.animBusy || game.phase !== 'playing'
+  
+  const isPuzzleQuestion = game.current?.bankType === 'system_architecture' &&
+    ['linked_list_memory', 'dfs_tree', 'circular_queue'].includes(game.current?.subtype)
+  const isAndroid = /Android/i.test(navigator.userAgent)
+  const usePuzzleLayout = isMobileLandscape && isPuzzleQuestion && isAndroid
 
   const handleMcq = (choiceIdx) => {
     if (!game.current) return
@@ -171,7 +227,7 @@ export default function BossTrialGamePage() {
     if (answeredRef.current === game.current.id) return
     answeredRef.current = game.current.id
     const ok = choiceIdx === game.current.payload.answerIndex
-    void game.applyAnswer(ok)
+    void game.applyAnswer(ok, false)
   }
 
   const handleSystem = (isCorrect) => {
@@ -179,7 +235,7 @@ export default function BossTrialGamePage() {
     if (busy) return
     if (answeredRef.current === game.current.id) return
     answeredRef.current = game.current.id
-    void game.applyAnswer(Boolean(isCorrect))
+    void game.applyAnswer(Boolean(isCorrect), false)
   }
 
   const handleSkip = () => {
@@ -187,7 +243,7 @@ export default function BossTrialGamePage() {
     if (busy) return
     if (answeredRef.current === game.current.id) return
     answeredRef.current = game.current.id
-    void game.applyAnswer(false)
+    void game.applyAnswer(false, true)
   }
 
   const handleBack = () => {
@@ -270,22 +326,30 @@ export default function BossTrialGamePage() {
         </div>
       ) : null}
 
+      <AnimatePresence>
+        {game.expansion && (
+          <SessionExpansionBanner expansion={game.expansion} onDismiss={game.dismissExpansion} />
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-ronin-muted">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span>
-            userId: <span className="text-ronin-cream">{userId}</span>
+            session: <span className="text-ronin-cream">{sessionId.slice(0, 8)}</span>
           </span>
-          <span>
-            session: <span className="text-ronin-cream">{sessionId}</span>
-          </span>
+          {game.totalXP > 0 && (
+            <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-emerald-400">
+              {game.totalXP.toLocaleString()} XP
+            </span>
+          )}
         </div>
         <Link to="/dashboard" className="rounded-lg border border-white/10 px-3 py-1 text-[11px] text-ronin-cream hover:bg-white/5">
           Exit to dashboard
         </Link>
       </div>
 
-      <div className={`flex min-h-0 flex-1 overflow-hidden rounded-3xl border border-white/10 bg-black/35 shadow-ronin ${isMobileLandscape ? 'flex-row' : 'flex-col'}`}>
-        <section className={`flex flex-col p-4 md:p-6 min-h-0 flex-1 ${isMobileLandscape ? 'w-1/2 border-r border-white/10 border-b-0' : 'min-h-[45vh] flex-[3] border-b border-white/10'}`}>
+      <div className={`flex min-h-0 flex-1 overflow-hidden rounded-3xl border border-white/10 bg-black/35 shadow-ronin ${isMobileLandscape && !usePuzzleLayout ? 'flex-row' : 'flex-col'}`}>
+        <section className={`flex flex-col p-4 md:p-6 min-h-0 flex-1 ${isMobileLandscape && !usePuzzleLayout ? 'w-1/2 border-r border-white/10 border-b-0' : usePuzzleLayout ? 'w-full border-b border-white/10' : 'min-h-[45vh] flex-[3] border-b border-white/10'}`}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <p className="text-[10px] uppercase tracking-[0.35em] text-ronin-gold">Boss trial</p>
@@ -350,7 +414,7 @@ export default function BossTrialGamePage() {
                   if (!game.current) return
                   if (answeredRef.current === game.current.id) return
                   answeredRef.current = game.current.id
-                  void game.applyAnswer(false)
+                  void game.applyAnswer(false, false)
                 }}
               />
             ) : null}
@@ -358,12 +422,13 @@ export default function BossTrialGamePage() {
         </section>
 
         {!ended ? (
-          <section className={`flex flex-col overflow-visible p-3 md:p-4 min-h-0 flex-1 ${isMobileLandscape ? 'w-1/2' : 'min-h-[32vh] flex-[2]'}`}>
+          <section className={`flex flex-col overflow-visible p-3 md:p-4 min-h-0 ${usePuzzleLayout ? 'h-[200px] w-full shrink-0' : isMobileLandscape ? 'w-1/2 flex-1' : 'min-h-[32vh] flex-[2]'}`}>
             <BossTrialCombatPanel
               combatVisualState={game.combatVisualState}
               roninHp={game.roninHp}
               bossHp={game.bossHp}
               phase={game.phase}
+              compact={usePuzzleLayout}
             />
           </section>
         ) : null}
@@ -372,6 +437,8 @@ export default function BossTrialGamePage() {
       {ended && sessionReviewOpen && game.questions ? (
         <SessionReviewView questions={game.questions} onClose={() => setSessionReviewOpen(false)} />
       ) : null}
+
+      <AgentToast toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

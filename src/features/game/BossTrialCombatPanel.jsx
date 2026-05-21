@@ -14,7 +14,7 @@ const arenaBg = [
 
 /**
  * Static React chrome (HP bars + arena frame) + Phaser combat sprites.
- * @param {{ combatVisualState: string; roninHp: number; bossHp: number; maxHp?: number; phase: string }} props
+ * @param {{ combatVisualState: string; roninHp: number; bossHp: number; maxHp?: number; phase: string; compact?: boolean }} props
  */
 export default function BossTrialCombatPanel({
   combatVisualState,
@@ -22,15 +22,49 @@ export default function BossTrialCombatPanel({
   bossHp,
   maxHp = 100,
   phase,
+  compact = false,
 }) {
   const roninPct = hpFillPercent(roninHp, maxHp)
   const bossPct = hpFillPercent(bossHp, maxHp)
 
-  // On mobile, disable pointer events so touches pass through for page scrolling.
-  // The interactive graph challenge canvases (linked list, DFS, circular queue) are
-  // in a separate section and remain fully tappable.
   const isMobile = typeof window !== 'undefined' &&
     ((window.innerWidth < 1024 && window.innerHeight < 500) || /Mobi|Android/i.test(navigator.userAgent))
+
+  if (compact) {
+    return (
+      <div
+        className="relative h-full w-full overflow-hidden rounded-xl border border-amber-900/45 bg-black/40 pointer-events-none"
+        style={{ backgroundImage: arenaBg }}
+      >
+        <div className="absolute left-0 right-0 top-1 z-20 flex justify-between gap-2 px-2">
+          <div className="flex-1 max-w-[45%] rounded-full border border-white/10 bg-black/55 px-2 py-0.5">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-emerald-400/90" style={{ width: `${roninPct}%` }} />
+            </div>
+            <p className="text-center text-[7px] uppercase tracking-wider text-ronin-muted">Ronin</p>
+          </div>
+          <div className="flex-1 max-w-[45%] rounded-full border border-white/10 bg-black/55 px-2 py-0.5">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-ronin-crimson/90" style={{ width: `${bossPct}%` }} />
+            </div>
+            <p className="text-center text-[7px] uppercase tracking-wider text-ronin-muted">Boss</p>
+          </div>
+        </div>
+        <div className="relative z-[5] h-full w-full">
+          <GameCanvas
+            variant="bossBattle"
+            combatVisualState={combatVisualState}
+            roninHp={roninHp}
+            bossHp={bossHp}
+            maxHp={maxHp}
+            phase={phase}
+            heightOverride={170}
+            className="h-full w-full border-0 bg-transparent shadow-none"
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div

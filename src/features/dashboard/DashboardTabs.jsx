@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import ExplorePanel from './explore/ExplorePanel.jsx'
 import LevelsCircuitPanel from './levels/LevelsCircuitPanel.jsx'
@@ -10,8 +10,19 @@ const tabs = [
   { id: 'tutorials', label: 'Tutorials' },
 ]
 
-export default function DashboardTabs() {
-  const [tab, setTab] = useState('explore')
+export default function DashboardTabs({ activeTab, onTabChange }) {
+  const [tab, setTab] = useState(activeTab || 'explore')
+
+  useEffect(() => {
+    if (activeTab && activeTab !== tab) {
+      setTab(activeTab)
+    }
+  }, [activeTab])
+
+  const handleTabChange = (newTab) => {
+    setTab(newTab)
+    if (onTabChange) onTabChange(newTab)
+  }
 
   return (
     <section className="mt-10 space-y-6">
@@ -22,7 +33,7 @@ export default function DashboardTabs() {
             <button
               key={t.id}
               type="button"
-              onClick={() => setTab(t.id)}
+              onClick={() => handleTabChange(t.id)}
               className={[
                 'relative rounded-lg px-5 py-2 text-sm font-semibold transition-colors',
                 active ? 'text-ronin-cream' : 'text-ronin-muted hover:text-ronin-cream',

@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion'
-import { Play, Sparkles } from 'lucide-react'
-import { useId } from 'react'
+import { Play, Sparkles, BarChart3 } from 'lucide-react'
+import { useId, useState } from 'react'
 import NeonButton from '../../components/ui/NeonButton.jsx'
 import { mockProfile } from '../../data/mockUser.js'
 import { useAuth } from '../../hooks/useAuth.js'
+import { useAntigravity } from '../../context/AntigravityContext.jsx'
+import ScoreboardDialog from './ScoreboardDialog.jsx'
 import appicon from '../../assets/appicon.png'
 import mascot from '../../assets/mascot.png'
 
@@ -45,11 +47,28 @@ function Ring({ pct }) {
   )
 }
 
-export default function HeroSection() {
+export default function HeroSection({ onNavigateToTutorial }) {
   const { user } = useAuth()
+  const { getProfileSnapshot } = useAntigravity()
+  const [scoreboardOpen, setScoreboardOpen] = useState(false)
+  
   const name = user?.displayName ?? mockProfile.displayName
-  const { xpCurrent, xpGoal, trackTitle, trackPoints, latestCourse } = mockProfile
+  const profile = getProfileSnapshot()
+  
+  const xpCurrent = profile.totalXP || mockProfile.xpCurrent
+  const xpGoal = mockProfile.xpGoal
+  const { trackTitle, trackPoints, latestCourse } = mockProfile
   const xpPct = Math.min(100, Math.round((xpCurrent / xpGoal) * 100))
+
+  const handleOpenScoreboard = () => setScoreboardOpen(true)
+  const handleCloseScoreboard = () => setScoreboardOpen(false)
+  
+  const handleNavigateToTutorial = (categoryName) => {
+    setScoreboardOpen(false)
+    if (onNavigateToTutorial) {
+      onNavigateToTutorial(categoryName)
+    }
+  }
 
   return (
     <section className="grid gap-4 lg:grid-cols-2">
@@ -83,7 +102,17 @@ export default function HeroSection() {
             <span>
               {xpCurrent.toLocaleString()} / {xpGoal.toLocaleString()} Ronin XP
             </span>
-            <span className="text-ronin-gold">{xpPct}%</span>
+            <div className="flex items-center gap-2">
+              <span className="text-ronin-gold">{xpPct}%</span>
+              <button
+                onClick={handleOpenScoreboard}
+                className="flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[10px] font-semibold text-purple-400 transition-colors hover:bg-purple-500/20"
+                title="View performance scoreboard"
+              >
+                <BarChart3 className="h-3.5 w-3.5" />
+                Scoreboard
+              </button>
+            </div>
           </div>
           <div className="h-2.5 overflow-hidden rounded-full bg-black/50 ring-1 ring-white/10">
             <motion.div
@@ -94,6 +123,12 @@ export default function HeroSection() {
             />
           </div>
         </div>
+
+        <ScoreboardDialog
+          open={scoreboardOpen}
+          onClose={handleCloseScoreboard}
+          onNavigateToTutorial={handleNavigateToTutorial}
+        />
 
         <div className="mt-8 flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-5">
           <div className="min-w-[180px] rounded-xl border border-white/10 bg-black/35 p-4 shadow-innerGlow">

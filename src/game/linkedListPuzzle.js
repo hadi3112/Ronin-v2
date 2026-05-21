@@ -8,29 +8,30 @@ function hexAddr(seed, i) {
 }
 
 /**
- * Builds a 4-node doubly-linked list slice (prev chain), shuffles for display.
- * Validates answers against the single correct left-to-right order (4! = 24 permutations).
+ * Builds a variable-node doubly-linked list slice (prev chain), shuffles for display.
  * @param {() => number} rng
+ * @param {number} [nodeCount=4] - Number of nodes (2-8)
  */
-export function buildLinkedListDragPayload(rng) {
+export function buildLinkedListDragPayload(rng, nodeCount = 4) {
+  const count = Math.max(2, Math.min(8, nodeCount))
   const seed = Math.floor(rng() * 0xf0000000) | 0x10000000
   const dataVals = new Set()
-  while (dataVals.size < 4) {
+  while (dataVals.size < count) {
     dataVals.add(10 + Math.floor(rng() * 90))
   }
   const dataArr = [...dataVals]
 
-  const addresses = [hexAddr(seed, 0), hexAddr(seed, 1), hexAddr(seed, 2), hexAddr(seed, 3)]
+  const addresses = Array.from({ length: count }, (_, i) => hexAddr(seed, i))
 
   /** @type {LinkedListDragNode[]} */
-  const chain = [
-    { id: 'n0', data: dataArr[0], prev: SENTINEL, address: addresses[0] },
-    { id: 'n1', data: dataArr[1], prev: addresses[0], address: addresses[1] },
-    { id: 'n2', data: dataArr[2], prev: addresses[1], address: addresses[2] },
-    { id: 'n3', data: dataArr[3], prev: addresses[2], address: addresses[3] },
-  ]
+  const chain = dataArr.map((data, i) => ({
+    id: `n${i}`,
+    data,
+    prev: i === 0 ? SENTINEL : addresses[i - 1],
+    address: addresses[i],
+  }))
 
-  const correctOrderIds = ['n0', 'n1', 'n2', 'n3']
+  const correctOrderIds = chain.map((_, i) => `n${i}`)
   const shuffled = [...chain]
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
     const j = Math.floor(rng() * (i + 1))

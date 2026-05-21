@@ -2,7 +2,7 @@ import { buildDfsTreePayload } from './dfsTreeGenerator.js'
 import { buildLinkedListDragPayload } from './linkedListPuzzle.js'
 
 const SESSION_TOTAL = 10
-const COUNTS = { stacktrace: 3, code_completion: 3, conceptual: 3, system_architecture: 1 }
+const COUNTS = { stacktrace: 3, code_completion: 3, conceptual: 2, system_architecture: 2 }
 
 function shuffleInPlace(arr, rng) {
   for (let i = arr.length - 1; i > 0; i -= 1) {
@@ -39,8 +39,9 @@ function hashSessionKey(s) {
  * @param {import('./QuestionBankManager.js').QuestionBankShape} bank
  * @param {string} sysKey
  * @param {() => number} rng
+ * @param {{ linkedListNodes?: number; dfsBranching?: number; dfsDepth?: number; ringBufferSize?: number }} [difficulty]
  */
-function buildSystemQuestion(bank, sysKey, rng) {
+function buildSystemQuestion(bank, sysKey, rng, difficulty = {}) {
   const sys = bank.system_architecture
   const raw = sys?.[sysKey]
   if (!raw) return null
@@ -51,7 +52,7 @@ function buildSystemQuestion(bank, sysKey, rng) {
       id,
       bankType: 'system_architecture',
       subtype: 'linked_list_memory',
-      payload: buildLinkedListDragPayload(rng),
+      payload: buildLinkedListDragPayload(rng, difficulty.linkedListNodes ?? 4),
     }
   }
   if (sysKey === 'circular_queue' || sysKey === 'circular_queue_alt') {
@@ -59,7 +60,7 @@ function buildSystemQuestion(bank, sysKey, rng) {
       id,
       bankType: 'system_architecture',
       subtype: 'circular_queue',
-      payload: raw,
+      payload: { ...raw, ringSize: difficulty.ringBufferSize ?? 6 },
     }
   }
   if (sysKey === 'dfs_tree') {
@@ -67,7 +68,7 @@ function buildSystemQuestion(bank, sysKey, rng) {
       id,
       bankType: 'system_architecture',
       subtype: 'dfs_tree',
-      payload: buildDfsTreePayload(rng),
+      payload: buildDfsTreePayload(rng, difficulty.dfsBranching ?? 3, difficulty.dfsDepth ?? 3),
     }
   }
   return null
@@ -75,11 +76,12 @@ function buildSystemQuestion(bank, sysKey, rng) {
 
 /**
  * @param {import('./QuestionBankManager.js').QuestionBankShape} bank
- * @param {{ rng?: () => number; sessionKey?: string }} [opts]
+ * @param {{ rng?: () => number; sessionKey?: string; difficulty?: { linkedListNodes?: number; dfsBranching?: number; dfsDepth?: number; ringBufferSize?: number } }} [opts]
  * @returns {object[]}
  */
 export function sampleSessionQuestions(bank, opts = {}) {
   const rng = opts.rng ?? Math.random
+  const difficulty = opts.difficulty ?? {}
   const h = opts.sessionKey ? hashSessionKey(opts.sessionKey) : Math.floor(rng() * 0xffffffff)
 
   const used = new Set()
@@ -121,35 +123,41 @@ export function sampleSessionQuestions(bank, opts = {}) {
   const hasRing = hasRingMain || hasRingAlt
   const hasTree = Boolean(sysBank.dfs_tree)
 
-  /** One slot each: linked list, ring family, DFS — not two slots for two ring templates. */
-  const families = []
-  if (hasLinkedList) families.push('linked_list_memory')
-  if (hasRing) families.push('__ring__')
-  if (hasTree) families.push('dfs_tree')
-
-  let sysKey = 'dfs_tree'
-  if (families.length > 0) {
-    const fam = families[h % families.length]
-    if (fam === 'linked_list_memory') sysKey = 'linked_list_memory'
-    else if (fam === 'dfs_tree') sysKey = 'dfs_tree'
-    else {
-      const ringKeys = []
-      if (hasRingMain) ringKeys.push('circular_queue')
-      if (hasRingAlt) ringKeys.push('circular_queue_alt')
-      sysKey = ringKeys[(h >>> 8) % ringKeys.length] ?? 'circular_queue'
+  // --- SLOT 1: Always linked list ---
+  const sysList = []
+  if (hasLinkedList) {
+    const ll = buildSystemQuestion(bank, 'linked_list_memory', rng, difficulty)
+    if (ll) {
+      if (!used.has(ll.id)) used.add(ll.id)
+      ll.id = `${ll.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000).toString(16).padStart(4, '0')}`
+      sysList.push(ll)
     }
   }
 
-  const sys = buildSystemQuestion(bank, sysKey, rng)
-  if (sys && !used.has(sys.id)) used.add(sys.id)
-  if (sys) {
-    // Unique per session so graph bus / Phaser canvas keys never collide with other rows or hot reload.
-    sys.id = `${sys.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000)
-      .toString(16)
-      .padStart(4, '0')}`
+  // --- SLOT 2: Pick one from remaining puzzle families (ring or DFS) ---
+  const secondFamilies = []
+  if (hasRing) secondFamilies.push('__ring__')
+  if (hasTree) secondFamilies.push('dfs_tree')
+
+  if (secondFamilies.length > 0) {
+    const fam = secondFamilies[h % secondFamilies.length]
+    let sysKey2 = 'dfs_tree'
+    if (fam === '__ring__') {
+      const ringKeys = []
+      if (hasRingMain) ringKeys.push('circular_queue')
+      if (hasRingAlt) ringKeys.push('circular_queue_alt')
+      sysKey2 = ringKeys[(h >>> 8) % ringKeys.length] ?? 'circular_queue'
+    }
+    const sys2 = buildSystemQuestion(bank, sysKey2, rng, difficulty)
+    if (sys2) {
+      if (!used.has(sys2.id)) used.add(sys2.id)
+      sys2.id = `${sys2.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000).toString(16).padStart(4, '0')}`
+      sysList.push(sys2)
+    }
   }
 
-  const assembled = [...stacktrace, ...code_completion, ...conceptual, ...(sys ? [sys] : [])]
+  // If we still have fewer than 2 puzzles (e.g. only linked list available), that's fine — fill with what we have
+  const assembled = [...stacktrace, ...code_completion, ...conceptual, ...sysList]
 
   shuffleInPlace(assembled, rng)
 

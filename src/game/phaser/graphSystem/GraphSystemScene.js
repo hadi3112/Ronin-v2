@@ -2,31 +2,35 @@ import Phaser from 'phaser'
 import { explainLinkedListOrder, isCorrectLinkedListOrder } from '../../linkedListPuzzle.js'
 import { GraphChallengeEventType, emitGraphChallengeEvent } from '../../graphChallenge/graphChallengeBus.js'
 import { applyRingStep, emptyRingState } from '../../graphChallenge/ringOps.js'
+import { COLORS, CSS, STROKE, RADIUS, EASE, FONT, getDPR } from '../phaserDesignTokens.js'
+import { GRAPH_ACTION_EVENT } from '../../../components/GraphChallengeCanvas.jsx'
 
 const DEPTH_BG = 0
 const DEPTH_GRAPH = 10
 const DEPTH_UI = 40
 
-const LL_FONT =
-  'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-
 export class GraphSystemScene extends Phaser.Scene {
   constructor() {
     super('GraphSystemScene')
-    /** @type {{ package: object; questionId: string; getDisabled: () => boolean } | null} */
+    /** @type {{ package: object; questionId: string; getDisabled: () => boolean; hideButtons?: boolean } | null} */
     this._boot = null
     this._blocked = false
+    this._hideButtons = false
     /** @type {Phaser.GameObjects.Text | null} */
     this._dfsSeqText = null
     /** @type {Phaser.GameObjects.GameObject[]} */
     this._dfsSprites = []
+    this._externalActionHandler = null
+    this._lockAction = null
+    this._resetAction = null
   }
 
   /**
-   * @param {{ package: object; questionId: string; getDisabled: () => boolean }} data
+   * @param {{ package: object; questionId: string; getDisabled: () => boolean; hideButtons?: boolean }} data
    */
   init(data) {
     this._boot = data
+    this._hideButtons = data.hideButtons ?? false
   }
 
   create() {
@@ -40,11 +44,30 @@ export class GraphSystemScene extends Phaser.Scene {
     this._questionId = questionId
     this._pkg = pkg
 
-    this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x0a0a0c, 1).setOrigin(0).setDepth(DEPTH_BG)
+    this._externalActionHandler = (e) => {
+      const { questionId: qid, action } = e.detail || {}
+      if (qid !== this._questionId) return
+      if (action === 'lock' && this._lockAction) this._lockAction()
+      if (action === 'reset' && this._resetAction) this._resetAction()
+    }
+    window.addEventListener(GRAPH_ACTION_EVENT, this._externalActionHandler)
+
+    this.add.rectangle(0, 0, this.scale.width, this.scale.height, COLORS.BG_DEEP, 1).setOrigin(0).setDepth(DEPTH_BG)
     this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height * 0.5, 0x1a1210, 0.5)
+      .rectangle(0, 0, this.scale.width, this.scale.height * 0.5, COLORS.BG_OVERLAY, 0.3)
       .setOrigin(0, 0)
       .setDepth(DEPTH_BG + 1)
+
+    // Faint grid overlay matching React grid-faint token
+    const gridG = this.add.graphics().setDepth(DEPTH_BG + 2).setAlpha(0.04)
+    const gridStep = 48
+    gridG.lineStyle(1, COLORS.CRIMSON, 1)
+    for (let x = 0; x < this.scale.width; x += gridStep) {
+      gridG.beginPath(); gridG.moveTo(x, 0); gridG.lineTo(x, this.scale.height); gridG.strokePath()
+    }
+    for (let y = 0; y < this.scale.height; y += gridStep) {
+      gridG.beginPath(); gridG.moveTo(0, y); gridG.lineTo(this.scale.width, y); gridG.strokePath()
+    }
 
     emitGraphChallengeEvent(questionId, pkg.subtype, GraphChallengeEventType.CHALLENGE_STARTED, {})
 
@@ -96,7 +119,7 @@ export class GraphSystemScene extends Phaser.Scene {
     const cardMap = new Map()
     /** @type {string | null} */
     let glowId = null
-    const textRes = Math.min(2, typeof window !== 'undefined' ? window.devicePixelRatio || 1.25 : 1.25)
+    const textRes = getDPR()
 
     const llArrows = this.add.graphics().setDepth(DEPTH_GRAPH - 1)
     let dragState = { active: false, id: null, hoverIndex: -1, dragX: 0, dragY: 0 }
@@ -104,7 +127,7 @@ export class GraphSystemScene extends Phaser.Scene {
     const drawCurvedArrow = (g, x1, y1, x2, y2, color, alpha) => {
       try {
         if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) return
-        g.lineStyle(3 * cardScale, color, Math.max(0.2, alpha))
+        g.lineStyle(STROKE.BOLD * cardScale, color, Math.max(0.2, alpha))
         
         const startX = x1 - hw
         const startY = y1 + hh * 0.25
@@ -175,7 +198,7 @@ export class GraphSystemScene extends Phaser.Scene {
           }
 
           const isPreview = dragState.active && (sourceId === dragState.id || targetId === dragState.id)
-          const color = 0x2dd4bf
+          const color = COLORS.TEAL
           const alpha = isPreview ? 1.0 : 0.65
 
           drawCurvedArrow(llArrows, sx, sy, tx, ty, color, alpha)
@@ -197,17 +220,23 @@ export class GraphSystemScene extends Phaser.Scene {
     const paintBody = (body, highlighted) => {
       body.clear()
       if (typeof body.fillGradientStyle === 'function') {
-        body.fillGradientStyle(0x273549, 0x273549, 0x111827, 0x0b1220, 1)
+        body.fillGradientStyle(COLORS.BG_CARD_TOP, COLORS.BG_CARD_TOP, COLORS.BG_CARD_MID, COLORS.BG_CARD_BOT, 1)
       } else {
-        body.fillStyle(0x152238, 1)
+        body.fillStyle(COLORS.BG_CARD, 1)
       }
       body.fillRoundedRect(-hw, -hh, cardW, cardH, rx)
       if (highlighted) {
-        body.lineStyle(2.25, 0xffffff, 0.92)
+        body.lineStyle(STROKE.MED, COLORS.CREAM, 0.92)
       } else {
-        body.lineStyle(1.25, 0x2dd4bf, 0.55)
+        body.lineStyle(STROKE.THIN, COLORS.TEAL, 0.55)
       }
       body.strokeRoundedRect(-hw, -hh, cardW, cardH, rx)
+      // Glass-shine accent line
+      body.lineStyle(1, 0xffffff, 0.06)
+      body.beginPath()
+      body.moveTo(-hw + rx, -hh + 2)
+      body.lineTo(hw - rx, -hh + 2)
+      body.strokePath()
     }
 
     /**
@@ -219,7 +248,7 @@ export class GraphSystemScene extends Phaser.Scene {
       if (!on) return
       const layers = [10, 7, 4]
       for (const ex of layers) {
-        neon.lineStyle(2.5, 0xffffff, 0.07 + (11 - ex) * 0.028)
+        neon.lineStyle(STROKE.MED, COLORS.CREAM, 0.07 + (11 - ex) * 0.028)
         neon.strokeRoundedRect(-hw - ex, -hh - ex, cardW + ex * 2, cardH + ex * 2, rx + 5)
       }
     }
@@ -244,7 +273,7 @@ export class GraphSystemScene extends Phaser.Scene {
         const cont = this.add.container(cx, slotY).setDepth(DEPTH_GRAPH)
 
         const shadow = this.add.graphics()
-        shadow.fillStyle(0x000000, 0.4)
+        shadow.fillStyle(COLORS.VOID, 0.5)
         shadow.fillRoundedRect(-hw + 4, -hh + 6, cardW, cardH, rx)
         cont.add(shadow)
 
@@ -259,7 +288,7 @@ export class GraphSystemScene extends Phaser.Scene {
         const label = (y, text, size, color, mono = false) => {
           const t = this.add
             .text(0, y, text, {
-              fontFamily: mono ? `"Consolas", "Monaco", monospace` : LL_FONT,
+              fontFamily: mono ? FONT.MONO : FONT.BODY,
               fontSize: `${Math.max(7, Math.round(size * cardScale))}px`,
               color,
               fontStyle: mono ? '500' : '600',
@@ -269,12 +298,12 @@ export class GraphSystemScene extends Phaser.Scene {
           return t
         }
 
-        cont.add(label(-hh + Math.round(22 * cardScale), 'DATA', 9, '#94a3b8'))
-        cont.add(label(-hh + Math.round(44 * cardScale), String(n.data), 17, '#f8fafc'))
-        cont.add(label(-hh + Math.round(74 * cardScale), 'PREV', 9, '#94a3b8'))
-        cont.add(label(-hh + Math.round(94 * cardScale), String(n.prev), 12, '#fde68a', true))
-        cont.add(label(-hh + Math.round(122 * cardScale), 'ADDR', 8, '#94a3b8'))
-        cont.add(label(-hh + Math.round(138 * cardScale), String(n.address), 11, '#bae6fd', true))
+        cont.add(label(-hh + Math.round(22 * cardScale), 'DATA', 9, CSS.SLATE_400))
+        cont.add(label(-hh + Math.round(44 * cardScale), String(n.data), 17, CSS.SLATE_50))
+        cont.add(label(-hh + Math.round(74 * cardScale), 'PREV', 9, CSS.SLATE_400))
+        cont.add(label(-hh + Math.round(94 * cardScale), String(n.prev), 12, CSS.AMBER_200, true))
+        cont.add(label(-hh + Math.round(122 * cardScale), 'ADDR', 8, CSS.SLATE_400))
+        cont.add(label(-hh + Math.round(138 * cardScale), String(n.address), 11, CSS.SKY_200, true))
 
         cont.setSize(cardW, cardH)
         cont.setInteractive({ draggable: true, useHandCursor: true })
@@ -349,13 +378,27 @@ export class GraphSystemScene extends Phaser.Scene {
       next.splice(to, 0, id)
       orderIds = next
       glowId = id
-      this.time.delayedCall(0, redraw)
+
+      // Smooth slot snapping animation instead of instant redraw
+      cardMap.forEach((cont) => {
+        const cid = cont.getData('nodeId')
+        const idx = orderIds.indexOf(cid)
+        const targetX = slotXs[idx] ?? leftCenterX + idx * gap
+        this.tweens.add({
+          targets: cont,
+          x: targetX,
+          y: slotY,
+          duration: 180,
+          ease: EASE.SMOOTH,
+        })
+      })
+      updateArrows()
+      this.time.delayedCall(200, () => { refreshGlow(); updateArrows() })
     })
 
     redraw()
 
-    const btnY = isMobile ? (this.scale.height - 28) : (slotY + cardH / 2 + 52)
-    this._textButton(this.scale.width / 2, btnY, 'Lock in order', () => {
+    this._lockAction = () => {
       if (this._blockedInput() || this._blocked) return
       if (isCorrectLinkedListOrder(orderIds, correct)) {
         this._emitResult(true)
@@ -366,13 +409,18 @@ export class GraphSystemScene extends Phaser.Scene {
         `Wrong order\nCorrect chain: ${w.correctLabels}\nYours: ${w.userLabels}\n\n${w.why}`,
         () => this._emitResult(false),
       )
-    }).setDepth(DEPTH_UI + 2)
+    }
+
+    if (!this._hideButtons) {
+      const btnY = isMobile ? (this.scale.height - 28) : (slotY + cardH / 2 + 52)
+      this._pillButton(this.scale.width / 2, btnY, isMobile ? 160 : 180, isMobile ? 34 : 44, 'Lock in order', 'primary', this._lockAction).setDepth(DEPTH_UI + 2)
+    }
   }
 
   _buildCircular(R) {
     const W = this.scale.width
     const H = this.scale.height
-    const textRes = Math.min(2, typeof window !== 'undefined' ? window.devicePixelRatio || 1.25 : 1.25)
+    const textRes = getDPR()
     const plan = R.operationPlan ?? []
     const cap = R.capacity
     /** @type {{ buf: (string|null)[]; head: number; size: number }} */
@@ -534,13 +582,13 @@ export class GraphSystemScene extends Phaser.Scene {
       const tx = step.op === 'enqueue' ? pushCX : popCX
       const ty = step.op === 'enqueue' ? pushCY : popCY
       dragGuideG.clear()
-      strokeDashedArrow(dragGuideG, homeX, homeY, tx, ty, { dash: 11, gap: 7, color: 0xfbbf24, alpha: 0.9, width: 2.2 })
+      strokeDashedArrow(dragGuideG, homeX, homeY, tx, ty, { dash: 11, gap: 7, color: COLORS.AMBER, alpha: 0.9, width: 2.2 })
     }
 
     const mkText = (x, y, str, size, color, bold = false) => {
       const t = this.add
         .text(x, y, str, {
-          fontFamily: LL_FONT,
+          fontFamily: FONT.BODY,
           fontSize: `${size}px`,
           color,
           fontStyle: bold ? '700' : '500',
@@ -552,9 +600,9 @@ export class GraphSystemScene extends Phaser.Scene {
 
     const drawRingTrack = () => {
       gRing.clear()
-      gRing.lineStyle(3, 0x52525b, 0.45)
+      gRing.lineStyle(STROKE.BOLD, COLORS.ZINC_600, 0.45)
       gRing.strokeCircle(ringCx, ringCy, ringR)
-      gRing.lineStyle(1.5, 0x27272a, 0.9)
+      gRing.lineStyle(STROKE.THIN, COLORS.ZINC_800, 0.9)
       gRing.strokeCircle(ringCx, ringCy, ringR - 3)
     }
 
@@ -563,8 +611,8 @@ export class GraphSystemScene extends Phaser.Scene {
       const g = this.add.graphics()
       const hw = sockW / 2
       const hh = sockH / 2
-      g.fillStyle(0x18181b, 0.94)
-      g.lineStyle(2, 0xa1a1aa, 0.45)
+      g.fillStyle(COLORS.ZINC_900, 0.94)
+      g.lineStyle(STROKE.MED, COLORS.ZINC_400, 0.45)
       g.fillRoundedRect(-hw, -hh, sockW, sockH, Math.round(12 * scaleFactor))
       g.strokeRoundedRect(-hw, -hh, sockW, sockH, Math.round(12 * scaleFactor))
       c.add(g)
@@ -594,13 +642,13 @@ export class GraphSystemScene extends Phaser.Scene {
         const isEnq = step.op === 'enqueue'
         const done = i < opIdx
         const cur = i === opIdx
-        const fill = isEnq ? 0x15803d : 0xdc2626
+        const fill = isEnq ? COLORS.EMERALD_DARK : COLORS.RED_DARK
         let alpha = 0.28
         let stroke = 0x737373
         let strokeA = 0.35
         if (done) {
           alpha = 0.72
-          stroke = isEnq ? 0x86efac : 0xfca5a5
+          stroke = isEnq ? COLORS.EMERALD_LIGHT : 0xfca5a5
           strokeA = 0.65
         }
         if (cur) {
@@ -637,7 +685,7 @@ export class GraphSystemScene extends Phaser.Scene {
       }
       const hint = this.add
         .text(Math.round(28 * scaleFactor), 0, hintLines, {
-          fontFamily: LL_FONT,
+          fontFamily: FONT.BODY,
           fontSize: `${fontSizeHint}px`,
           color: '#c8c8c8',
           fontStyle: '500',
@@ -689,8 +737,8 @@ export class GraphSystemScene extends Phaser.Scene {
         const g = this.add.graphics()
         const isHead = i === headIdx && state.size > 0
         const isTail = i === tailIdx && state.size > 0
-        g.fillStyle(isHead ? 0x450a0a : 0x18181b, isHead ? 0.55 : 0.92)
-        g.lineStyle(2, isHead ? 0xf87171 : isTail ? 0x34d399 : 0x3f3f46, isHead ? 0.95 : isTail ? 0.75 : 0.55)
+        g.fillStyle(isHead ? COLORS.RED_FILL : COLORS.ZINC_900, isHead ? 0.55 : 0.92)
+        g.lineStyle(STROKE.MED, isHead ? COLORS.ROSE : isTail ? COLORS.EMERALD : COLORS.ZINC_700, isHead ? 0.95 : isTail ? 0.75 : 0.55)
         g.fillRoundedRect(-slotHalf, -slotHalf, slotSize, slotSize, Math.round(12 * scaleFactor))
         g.strokeRoundedRect(-slotHalf, -slotHalf, slotSize, slotSize, Math.round(12 * scaleFactor))
         cont.add(g)
@@ -699,7 +747,7 @@ export class GraphSystemScene extends Phaser.Scene {
         const ix = ringCx + (ringR + slotHalf + 8) * Math.cos(angle)
         const iy = ringCy + (ringR + slotHalf + 8) * Math.sin(angle)
         const idxT = this.add
-          .text(ix, iy, String(i), { fontFamily: LL_FONT, fontSize: `${fontSizeIdx}px`, color: '#737373' })
+          .text(ix, iy, String(i), { fontFamily: FONT.BODY, fontSize: `${fontSizeIdx}px`, color: '#737373' })
           .setOrigin(0.5)
           .setDepth(DEPTH_GRAPH)
         slotIndexTexts.push(idxT)
@@ -738,8 +786,8 @@ export class GraphSystemScene extends Phaser.Scene {
     const makeChip = (id, label, display, hx, hy) => {
       const cont = this.add.container(hx, hy).setDepth(DEPTH_GRAPH + 6)
       const body = this.add.graphics()
-      body.fillStyle(0x172554, 0.96)
-      body.lineStyle(2, 0x38bdf8, 0.75)
+      body.fillStyle(COLORS.SKY_DEEP, 0.96)
+      body.lineStyle(STROKE.MED, COLORS.SKY, 0.75)
       body.fillRoundedRect(-chipHalf, -chipHalf, chipSize, chipSize, Math.round(12 * scaleFactor))
       body.strokeRoundedRect(-chipHalf, -chipHalf, chipSize, chipSize, Math.round(12 * scaleFactor))
       cont.add(body)
@@ -783,6 +831,7 @@ export class GraphSystemScene extends Phaser.Scene {
       if (this._blockedInput()) return
       if (!obj.getData || obj.getData('homeId') == null) return
       this.children.bringToTop(obj)
+      this.tweens.add({ targets: obj, scaleX: 1.12, scaleY: 1.12, duration: 120, ease: EASE.SMOOTH })
     })
 
     this.input.on('drag', (_p, obj, dragX, dragY) => {
@@ -793,6 +842,7 @@ export class GraphSystemScene extends Phaser.Scene {
 
     this.input.on('dragend', (_p, obj) => {
       clearDragGuide()
+      this.tweens.add({ targets: obj, scaleX: 1, scaleY: 1, duration: 100, ease: EASE.SMOOTH })
       if (this._blockedInput() || this._blocked) return
       if (obj.getData?.('homeId') == null) return
       const step = plan[opIdx]
@@ -887,7 +937,7 @@ export class GraphSystemScene extends Phaser.Scene {
     const crossHalf = Math.max(6, 8 * s)
 
     const gEdges = this.add.graphics().setDepth(DEPTH_GRAPH)
-    gEdges.lineStyle(Math.max(1.5, 2 * s), 0xf43f5e, 0.5)
+    gEdges.lineStyle(Math.max(1.5, 2 * s), COLORS.ROSE, 0.5)
     T.edges.forEach((e) => {
       const a = map(e.x1, e.y1)
       const b = map(e.x2, e.y2)
@@ -902,10 +952,10 @@ export class GraphSystemScene extends Phaser.Scene {
     const nTotal = T.allIds.length
 
     const seqY = this.scale.height - padBottom + 8
-    const dfsRes = Math.min(2, typeof window !== 'undefined' ? window.devicePixelRatio || 1.25 : 1.25)
+    const dfsRes = getDPR()
     this._dfsSeqText = this.add
       .text(padX, seqY, '', {
-        fontFamily: LL_FONT,
+        fontFamily: FONT.BODY,
         fontSize: isMobile ? '11px' : '13px',
         color: '#a8a29e',
         wordWrap: { width: this.scale.width - padX * 2 },
@@ -926,8 +976,8 @@ export class GraphSystemScene extends Phaser.Scene {
         const { x, y } = map(p.x, p.y)
         const on = sequence.includes(n.id)
         const isTarget = n.id === T.targetId
-        const fill = isTarget ? 0xdc2626 : on ? 0x15803d : 0xfafafa
-        const stroke = isTarget ? 0xfecaca : on ? 0x86efac : 0xe11d48
+        const fill = isTarget ? COLORS.RED_DARK : on ? COLORS.EMERALD_DARK : COLORS.ZINC_50
+        const stroke = isTarget ? COLORS.ROSE_LIGHT : on ? COLORS.EMERALD_LIGHT : COLORS.ROSE_DIM
         const circle = this.add.circle(x, y, nodeR, fill, isTarget ? 0.55 : on ? 0.4 : 1).setStrokeStyle(2, stroke, 0.95)
         circle.setInteractive({ useHandCursor: true })
         circle.setDepth(DEPTH_GRAPH + 2)
@@ -942,7 +992,7 @@ export class GraphSystemScene extends Phaser.Scene {
         const col = on || isTarget ? '#ffffff' : '#171717'
         const t = this.add
           .text(x, y + 1, String(n.id), {
-            fontFamily: LL_FONT,
+            fontFamily: FONT.BODY,
             fontSize: Math.max(11, Math.round(13 * s)),
             color: col,
             fontStyle: '800',
@@ -961,6 +1011,16 @@ export class GraphSystemScene extends Phaser.Scene {
           xg.lineTo(x - crossHalf, y + crossHalf)
           xg.strokePath()
           this._dfsSprites.push(xg)
+          // Subtle pulse on target node
+          this.tweens.add({
+            targets: circle,
+            scaleX: 1.08,
+            scaleY: 1.08,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: EASE.GENTLE,
+          })
         }
       }
       updateSeq()
@@ -968,13 +1028,7 @@ export class GraphSystemScene extends Phaser.Scene {
 
     redrawNodes()
 
-    const barY = this.scale.height - actionBarH / 2 - (isMobile ? 6 : 10)
-    const btnW = Math.min(isMobile ? 148 : 168, (this.scale.width - (isMobile ? 32 : 48)) / 2 - (isMobile ? 6 : 8))
-    const gap = isMobile ? 8 : 12
-    const cx = this.scale.width / 2
-    const offset = btnW / 2 + gap / 2
-
-    this._pillButton(cx - offset, barY, btnW, isMobile ? 32 : 44, 'Lock traversal', 'primary', () => {
+    this._lockAction = () => {
       if (this._blockedInput() || this._blocked) return
       const full =
         sequence.length === nTotal &&
@@ -991,13 +1045,36 @@ export class GraphSystemScene extends Phaser.Scene {
         return
       }
       this._emitResult(true)
-    }).setDepth(DEPTH_UI + 2)
+    }
 
-    this._pillButton(cx + offset, barY, btnW, isMobile ? 32 : 44, 'Reset', 'secondary', () => {
+    this._resetAction = () => {
       if (this._blockedInput() || this._blocked) return
       sequence = []
       redrawNodes()
-    }).setDepth(DEPTH_UI + 2)
+    }
+
+    if (!this._hideButtons) {
+      const barY = this.scale.height - actionBarH / 2 - (isMobile ? 6 : 10)
+      const btnW = Math.min(isMobile ? 148 : 168, (this.scale.width - (isMobile ? 32 : 48)) / 2 - (isMobile ? 6 : 8))
+      const gap = isMobile ? 8 : 12
+      const cx = this.scale.width / 2
+      const offset = btnW / 2 + gap / 2
+
+      this._pillButton(cx - offset, barY, btnW, isMobile ? 32 : 44, 'Lock traversal', 'primary', this._lockAction).setDepth(DEPTH_UI + 2)
+
+      this._pillButton(cx + offset, barY, btnW, isMobile ? 32 : 44, 'Reset', 'secondary', () => {
+        this._resetAction?.()
+      }).setDepth(DEPTH_UI + 2)
+    }
+  }
+
+  shutdown() {
+    if (this._externalActionHandler) {
+      window.removeEventListener(GRAPH_ACTION_EVENT, this._externalActionHandler)
+      this._externalActionHandler = null
+    }
+    this._lockAction = null
+    this._resetAction = null
   }
 
   /**
@@ -1014,21 +1091,21 @@ export class GraphSystemScene extends Phaser.Scene {
     const cont = this.add.container(cx, cy)
     const g = this.add.graphics()
     const isPrimary = variant === 'primary'
-    const fill = isPrimary ? 0xc41e3a : 0x27272a
-    const stroke = isPrimary ? 0xfe9a9a : 0xa3a3a3
+    const fill = isPrimary ? COLORS.CRIMSON : COLORS.ZINC_800
+    const stroke = isPrimary ? COLORS.CORAL : COLORS.ZINC_400
     const fillA = isPrimary ? 0.98 : 0.94
-    const res = Math.min(2.5, typeof window !== 'undefined' ? window.devicePixelRatio || 1.5 : 1.5)
+    const res = getDPR()
     const paint = (fillC, strokeC, strokeA) => {
       g.clear()
       g.fillStyle(fillC, fillA)
       g.lineStyle(1.5, strokeC, strokeA)
-      g.fillRoundedRect(-w / 2, -h / 2, w, h, 14)
-      g.strokeRoundedRect(-w / 2, -h / 2, w, h, 14)
+      g.fillRoundedRect(-w / 2, -h / 2, w, h, RADIUS.MD)
+      g.strokeRoundedRect(-w / 2, -h / 2, w, h, RADIUS.MD)
     }
     paint(fill, stroke, isPrimary ? 0.55 : 0.42)
     const txt = this.add
       .text(0, 0, label, {
-        fontFamily: LL_FONT,
+        fontFamily: FONT.BODY,
         fontSize: isMobile ? (isPrimary ? '12px' : '11px') : (isPrimary ? '15px' : '14px'),
         color: isPrimary ? '#fff7f7' : '#f5f5f5',
         fontStyle: '600',
@@ -1041,8 +1118,8 @@ export class GraphSystemScene extends Phaser.Scene {
     cont.input.useHandCursor = true
     cont.on('pointerover', () => {
       cont.setScale(1.03)
-      if (isPrimary) paint(0xa61e32, 0xffe4e6, 0.75)
-      else paint(0x3f3f46, 0xd4d4d4, 0.55)
+      if (isPrimary) paint(COLORS.NAV_FROM, 0xffe4e6, 0.75)
+      else paint(COLORS.ZINC_700, 0xd4d4d4, 0.55)
     })
     cont.on('pointerout', () => {
       cont.setScale(1)
@@ -1075,10 +1152,10 @@ export class GraphSystemScene extends Phaser.Scene {
     const bx = 16
     const by = this.scale.height - h - 16
     const bg = this.add.graphics().setDepth(DEPTH_UI + 20)
-    bg.fillStyle(0x1c1917, 0.94)
-    bg.lineStyle(2, 0xf59e0b, 0.45)
-    bg.fillRoundedRect(bx, by, w, h, 14)
-    bg.strokeRoundedRect(bx, by, w, h, 14)
+    bg.fillStyle(COLORS.BG_PANEL, 0.94)
+    bg.lineStyle(STROKE.MED, COLORS.AMBER_BORDER, 0.45)
+    bg.fillRoundedRect(bx, by, w, h, RADIUS.MD)
+    bg.strokeRoundedRect(bx, by, w, h, RADIUS.MD)
     const body = [mainText, extra].filter(Boolean).join('\n\n')
     const t = this.add
       .text(bx + 16, by + 16, body, { fontSize: '11px', color: '#fef3c7', wordWrap: { width: w - 32 } })

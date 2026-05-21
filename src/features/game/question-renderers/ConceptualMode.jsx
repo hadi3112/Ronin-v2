@@ -14,7 +14,7 @@ export default function ConceptualMode({ payload, disabled, onAnswer }) {
             type="button"
             disabled={disabled}
             onClick={() => onAnswer(idx)}
-            className={`rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-left ${ANSWER_TEXT} hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40`}
+            className={`rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-left transition-colors ${ANSWER_TEXT} hover:bg-white/5 active:bg-white/20 active:border-white/25 disabled:cursor-not-allowed disabled:opacity-40`}
           >
             {c}
           </button>
