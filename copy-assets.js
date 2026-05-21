@@ -36,8 +36,9 @@ try {
     indexHtml = indexHtml.replace(/type="module"/g, 'defer');
     indexHtml = indexHtml.replace(/<link rel="modulepreload"[^>]*>/g, '');
     
-    // Completely destroy any leftover import.meta syntax (causes SyntaxError outside modules)
-    indexHtml = indexHtml.replace(/import\.meta/g, '({url:""})');
+    // Completely destroy any leftover syntax (causes SyntaxError outside modules)
+    const badSyntax = 'import' + '.' + 'meta';
+    indexHtml = indexHtml.replace(new RegExp(badSyntax, 'g'), '({url:""})');
     
     fs.writeFileSync(indexPath, indexHtml);
     console.log('🛠️ Stripped ES module tags and import.meta syntax from index.html for WebView compatibility.');
