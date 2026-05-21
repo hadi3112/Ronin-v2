@@ -142,6 +142,7 @@ export default function BossTrialGamePage() {
   const [sessionReviewOpen, setSessionReviewOpen] = useState(false)
   const [quitConfirmOpen, setQuitConfirmOpen] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+  const [isReloading, setIsReloading] = useState(false)
 
   useEffect(() => {
     const checkLayout = () => {
@@ -227,6 +228,13 @@ export default function BossTrialGamePage() {
 
   return (
     <div className="flex min-h-[calc(100vh-96px)] flex-col gap-3">
+      {isReloading ? (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/80 backdrop-blur-md">
+          <p className="text-lg font-display font-bold text-ronin-cream tracking-wider">Reloading challenges…</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-ronin-coral" />
+        </div>
+      ) : null}
+
       {quitConfirmOpen ? (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
@@ -323,7 +331,10 @@ export default function BossTrialGamePage() {
                 bossHp={game.bossHp}
                 correctCount={game.correctCount}
                 totalQuestions={game.totalQuestions}
-                onReplay={() => window.location.reload()}
+                onReplay={() => {
+                  setIsReloading(true)
+                  setTimeout(() => window.location.reload(), 800)
+                }}
                 onExit={() => navigate('/dashboard')}
                 onReviewChallenge={() => setSessionReviewOpen(true)}
               />

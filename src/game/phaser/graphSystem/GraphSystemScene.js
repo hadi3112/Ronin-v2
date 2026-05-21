@@ -72,7 +72,8 @@ export class GraphSystemScene extends Phaser.Scene {
     const correct = [...L.correctOrderIds]
     
     const isMobile = this.scale.height < 360 || this.scale.width < 700
-    const cardScale = isMobile ? Math.max(0.68, Math.min(1.0, (this.scale.height - 60) / 280)) : 1.0
+    const rawCardScale = (this.scale.height - 60) / 280
+    const cardScale = isMobile ? Math.max(0.68, Math.min(1.0, isNaN(rawCardScale) ? 1.0 : rawCardScale)) : 1.0
 
     const cardW = Math.round(116 * cardScale)
     const cardH = Math.round(152 * cardScale)
@@ -82,7 +83,7 @@ export class GraphSystemScene extends Phaser.Scene {
     const nSlots = orderIds.length
     const margin = isMobile ? 16 : 40
     const gap = Math.max(
-      Math.round(76 * cardScale),
+      cardW + (isMobile ? 12 : 24),
       Math.min(Math.round(124 * cardScale), (this.scale.width - margin * 2 - cardW) / Math.max(1, nSlots - 1)),
     )
     const rowOuterW = (nSlots - 1) * gap + cardW
@@ -96,6 +97,93 @@ export class GraphSystemScene extends Phaser.Scene {
     /** @type {string | null} */
     let glowId = null
     const textRes = Math.min(2, typeof window !== 'undefined' ? window.devicePixelRatio || 1.25 : 1.25)
+
+    const llArrows = this.add.graphics().setDepth(DEPTH_GRAPH - 1)
+    let dragState = { active: false, id: null, hoverIndex: -1, dragX: 0, dragY: 0 }
+
+    const drawCurvedArrow = (g, x1, y1, x2, y2, color, alpha) => {
+      try {
+        if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) return
+        g.lineStyle(3 * cardScale, color, Math.max(0.2, alpha))
+        
+        const startX = x1 - hw
+        const startY = y1 + hh * 0.25
+        const endX = x2 + hw + 4 * cardScale
+        const endY = y2 + hh * 0.25
+
+        const dist = Math.abs(startX - endX)
+        const isLong = dist > gap * 1.5 || Math.abs(startY - endY) > 20
+        
+        const curveY1 = isLong ? startY + 60 * cardScale + dist * 0.15 : startY
+        const curveY2 = isLong ? endY + 60 * cardScale + dist * 0.15 : endY
+
+        const cx1 = startX - dist * 0.3
+        const cx2 = endX + dist * 0.3
+
+        g.beginPath()
+        g.moveTo(startX, startY)
+        g.bezierCurveTo(cx1, curveY1, cx2, curveY2, endX, endY)
+        g.strokePath()
+
+        const arrowSize = 10 * cardScale
+        g.fillStyle(color, Math.max(0.3, alpha + 0.1))
+        g.beginPath()
+        g.moveTo(endX, endY)
+        g.lineTo(endX + arrowSize, endY - arrowSize * 0.6)
+        g.lineTo(endX + arrowSize, endY + arrowSize * 0.6)
+        g.closePath()
+        g.fill()
+      } catch (err) {
+        console.error('Error drawing arrow:', err)
+      }
+    }
+
+    const updateArrows = () => {
+      try {
+        llArrows.clear()
+        let virtualIds = [...orderIds]
+        if (dragState.active) {
+          const from = virtualIds.indexOf(dragState.id)
+          if (from >= 0) {
+            virtualIds.splice(from, 1)
+            virtualIds.splice(dragState.hoverIndex, 0, dragState.id)
+          }
+        }
+
+        for (let i = 1; i < virtualIds.length; i++) {
+          const sourceId = virtualIds[i]
+          const targetId = virtualIds[i - 1]
+          
+          let sx, sy
+          if (dragState.active && sourceId === dragState.id) {
+            sx = dragState.dragX
+            sy = dragState.dragY
+          } else {
+            const idx = orderIds.indexOf(sourceId)
+            sx = slotXs[idx] ?? leftCenterX + idx * gap
+            sy = slotY
+          }
+
+          let tx, ty
+          if (dragState.active && targetId === dragState.id) {
+            tx = dragState.dragX
+            ty = dragState.dragY
+          } else {
+            const idx = orderIds.indexOf(targetId)
+            tx = slotXs[idx] ?? leftCenterX + idx * gap
+            ty = slotY
+          }
+
+          const isPreview = dragState.active && (sourceId === dragState.id || targetId === dragState.id)
+          const color = 0x2dd4bf
+          const alpha = isPreview ? 1.0 : 0.65
+
+          drawCurvedArrow(llArrows, sx, sy, tx, ty, color, alpha)
+        }
+      } catch (err) {
+        console.error('Error updating arrows:', err)
+      }
+    }
 
     const clearCards = () => {
       cardMap.forEach((c) => c.destroy())
@@ -201,6 +289,7 @@ export class GraphSystemScene extends Phaser.Scene {
 
         cardMap.set(id, cont)
       })
+      updateArrows()
     }
 
     const findSlotIndex = (worldX) => {
@@ -221,14 +310,28 @@ export class GraphSystemScene extends Phaser.Scene {
       const nid = obj.getData('nodeId')
       if (nid) {
         glowId = nid
+        dragState.active = true
+        dragState.id = nid
+        dragState.hoverIndex = orderIds.indexOf(nid)
+        dragState.dragX = obj.x
+        dragState.dragY = obj.y
         refreshGlow()
+        updateArrows()
       }
       this.children.bringToTop(obj)
     })
 
-    this.input.on('drag', (_p, obj, dragX) => {
+    this.input.on('drag', (_p, obj, dragX, dragY) => {
       if (this._blockedInput()) return
       obj.x = dragX
+      obj.y = dragY
+      const nid = obj.getData('nodeId')
+      if (nid) {
+        dragState.dragX = dragX
+        dragState.dragY = dragY
+        dragState.hoverIndex = findSlotIndex(dragX)
+        updateArrows()
+      }
     })
 
     this.input.on('dragend', (_p, obj) => {
@@ -236,6 +339,10 @@ export class GraphSystemScene extends Phaser.Scene {
       const id = obj.getData('nodeId')
       const from = orderIds.indexOf(id)
       const to = findSlotIndex(obj.x)
+      
+      dragState.active = false
+      dragState.id = null
+      
       if (from < 0) return
       const next = [...orderIds]
       next.splice(from, 1)
