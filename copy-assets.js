@@ -35,8 +35,12 @@ try {
     indexHtml = indexHtml.replace(/type="module" crossorigin/g, 'defer');
     indexHtml = indexHtml.replace(/type="module"/g, 'defer');
     indexHtml = indexHtml.replace(/<link rel="modulepreload"[^>]*>/g, '');
+    
+    // Completely destroy any leftover import.meta syntax (causes SyntaxError outside modules)
+    indexHtml = indexHtml.replace(/import\.meta/g, '({url:""})');
+    
     fs.writeFileSync(indexPath, indexHtml);
-    console.log('🛠️ Stripped ES module tags from index.html for WebView compatibility.');
+    console.log('🛠️ Stripped ES module tags and import.meta syntax from index.html for WebView compatibility.');
   }
 
   console.log('✨ Success! Assets successfully compiled and bridged to Expo shell.');
