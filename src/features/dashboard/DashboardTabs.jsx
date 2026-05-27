@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import ExplorePanel from './explore/ExplorePanel.jsx'
 import LevelsCircuitPanel from './levels/LevelsCircuitPanel.jsx'
-import TutorialsHighwayPanel from './tutorials/TutorialsHighwayPanel.jsx'
+import TrainingGroundsPanel from './training/TrainingGroundsPanel.jsx'
 
 const tabs = [
   { id: 'explore', label: 'Explore' },
   { id: 'levels', label: 'Levels' },
-  { id: 'tutorials', label: 'Tutorials' },
+  { id: 'training', label: 'Training Grounds' },
 ]
 
 export default function DashboardTabs({ activeTab, onTabChange }) {
@@ -62,7 +62,7 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
         >
           {tab === 'explore' && <ExplorePanel />}
           {tab === 'levels' && <LevelsCircuitPanel />}
-          {tab === 'tutorials' && <TutorialsHighwayPanel />}
+          {tab === 'training' && <TrainingGroundsPanel />}
         </motion.div>
       </AnimatePresence>
     </section>
