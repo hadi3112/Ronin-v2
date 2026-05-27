@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /**
@@ -6,9 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion'
  * Expands on click to reveal an IDE preview placeholder
  * and a "Start Training" CTA button.
  */
-export default function TrainingCard({ language, icon, description, accent, delay = 0 }) {
+export default function TrainingCard({ id, language, icon, description, accent, delay = 0 }) {
   const [expanded, setExpanded] = useState(false)
   const [hoverBtn, setHoverBtn] = useState(false)
+  const navigate = useNavigate()
 
   return (
     <motion.div
@@ -138,6 +140,7 @@ export default function TrainingCard({ language, icon, description, accent, dela
                   type="button"
                   onMouseEnter={() => setHoverBtn(true)}
                   onMouseLeave={() => setHoverBtn(false)}
+                  onClick={() => navigate(`/dashboard/training/${id}`)}
                   className="relative overflow-hidden rounded-xl px-6 py-2.5 text-sm font-semibold tracking-wide transition-all duration-200"
                   style={{
                     background: hoverBtn

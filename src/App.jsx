@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage.jsx'
 import GettingStartedPage from './pages/GettingStartedPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import PreferencesPage from './pages/PreferencesPage.jsx'
+import IDETrainingPage from './pages/IDETrainingPage.jsx'
 
 export default function App() {
   return (
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="game/boss-trial" element={<BossTrialGamePage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="contact" element={<ContactPage />} />
+        <Route path="training/:language" element={<IDETrainingPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
