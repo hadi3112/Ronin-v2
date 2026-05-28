@@ -248,6 +248,7 @@ The **Antigravity Agent** is the core AI system that powers adaptive gameplay in
 | Routing | React Router 7 |
 | Mobile | Expo 54 + React Native WebView |
 | State Management | React Context + Local State |
+| Code Editor (web) | Monaco Editor via `@monaco-editor/react` |
 
 ### Question Types & Renderers
 
@@ -294,6 +295,56 @@ The **Antigravity Agent** is the core AI system that powers adaptive gameplay in
 - **React ↔ Phaser**: Combat panels and puzzle canvases use Phaser scenes embedded in React components via `GameCanvas.jsx` and `GraphChallengeCanvas.jsx`
 - **Antigravity ↔ UI**: `AntigravityContext` provides global access to agent methods; `AgentToast` and `AgentReasoningPanel` display real-time feedback
 - **Web ↔ Mobile**: Expo WebView loads the Vite dev server, enabling hot reload on Android
+
+---
+
+## feat/editor Branch
+
+> **Branch**: `feat/editor` — branched from `dev/phaser`
+
+This branch introduces the **Training Grounds IDE** — a web-only code editor experience layered on top of the existing Ronin platform.
+
+### New Dependencies
+
+```bash
+npm install @monaco-editor/react   # installed on feat/editor only
+```
+
+> ⚠️ `@monaco-editor/react` is a **web-only dependency**. It is code-split via `React.lazy` and never imported by `expo-shell/` or any Android build path.
+
+### Training Grounds Feature
+
+| Component | Path | Description |
+|-----------|------|-------------|
+| `TrainingGroundsPanel` | `src/features/dashboard/training/` | Dashboard tab replacing "Tutorials" |
+| `TrainingCard` | `src/features/dashboard/training/` | Expandable language selection card |
+| `LoadingContainer` | `src/features/training/` | Fullscreen fake-loading overlay with 4 phases |
+| `IDETrainingPage` | `src/pages/` | Full IDE layout page at `/dashboard/training/:language` |
+| `IDEQuestionPanel` | `src/features/training/` | Left-top: problem statement + test cases |
+| `IDEEditorPanel` | `src/features/training/` | Right-top: Monaco (Python) / skeleton (C++, JS) |
+| `IDEConsolePanel` | `src/features/training/` | Right-bottom: console output placeholder |
+| `IDEGeminiPanel` | `src/features/training/` | Left-bottom: Gemini API response placeholder |
+| `IDEBottomBar` | `src/features/training/` | Run + Submit action bar |
+| `MonacoEditorWrapper` | `src/features/training/` | Lazy Monaco wrapper (web-only) |
+
+### User Flow
+
+```
+Dashboard → Training Grounds tab → expand Python card
+→ click "Start Training"
+→ LoadingContainer (4-phase progress bar, ~2s)
+→ navigate to /dashboard/training/python
+→ IDETrainingPage (Monaco editor, question panel, console, Gemini panel)
+```
+
+### LoadingContainer Phases
+
+| Progress | Label |
+|----------|-------|
+| 0–30%    | Initializing environment |
+| 30–60%   | Loading runtime modules |
+| 60–85%   | Preparing training session |
+| 85–100%  | Finalizing IDE |
 
 ---
 
