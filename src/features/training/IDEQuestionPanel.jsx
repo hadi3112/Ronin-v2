@@ -8,9 +8,7 @@ const TEST_CASES = [
   { id: 3, input: 'nums = [3, 3], target = 6', expected: '[0, 1]', passing: null },
 ]
 
-export default function IDEQuestionPanel({ language }) {
-  const [reasoningOpen, setReasoningOpen] = useState(false)
-  const [videoOpen, setVideoOpen] = useState(false)
+export default function IDEQuestionPanel({ language, onOpenReasoning, onOpenVideo }) {
   const [testsExpanded, setTestsExpanded] = useState(true)
 
   return (
@@ -124,13 +122,8 @@ export default function IDEQuestionPanel({ language }) {
       <div className="flex flex-wrap gap-2 pb-2">
         <button
           type="button"
-          onClick={() => setReasoningOpen(v => !v)}
-          className={[
-            'flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all duration-200',
-            reasoningOpen
-              ? 'border-ronin-coral/50 bg-ronin-coral/10 text-ronin-coral'
-              : 'border-white/10 bg-white/[0.04] text-ronin-muted hover:border-ronin-coral/30 hover:text-ronin-cream',
-          ].join(' ')}
+          onClick={onOpenReasoning}
+          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-ronin-muted transition-all duration-200 hover:border-ronin-coral/30 hover:text-ronin-cream"
         >
           <BookOpen className="h-3.5 w-3.5" />
           Show Reasoning
@@ -138,62 +131,13 @@ export default function IDEQuestionPanel({ language }) {
 
         <button
           type="button"
-          onClick={() => setVideoOpen(v => !v)}
-          className={[
-            'flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all duration-200',
-            videoOpen
-              ? 'border-ronin-gold/50 bg-ronin-gold/10 text-ronin-gold'
-              : 'border-white/10 bg-white/[0.04] text-ronin-muted hover:border-ronin-gold/30 hover:text-ronin-cream',
-          ].join(' ')}
+          onClick={onOpenVideo}
+          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-ronin-muted transition-all duration-200 hover:border-ronin-gold/30 hover:text-ronin-cream"
         >
           <Video className="h-3.5 w-3.5" />
           Video Explanation
         </button>
       </div>
-
-      {/* ── Reasoning placeholder ── */}
-      <AnimatePresence>
-        {reasoningOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className="rounded-xl border border-ronin-coral/20 bg-ronin-coral/5 p-4"
-          >
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-ronin-coral mb-2">
-              Agent Reasoning
-            </p>
-            <p className="text-xs text-ronin-muted leading-relaxed">
-              Reasoning output will appear here once Gemini integration is active.
-              The agent will explain its thought process step-by-step.
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Video placeholder ── */}
-      <AnimatePresence>
-        {videoOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden rounded-xl border border-ronin-gold/20 bg-black/40"
-          >
-            <div className="flex h-32 items-center justify-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/60 text-ronin-gold">
-                <Video className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-ronin-cream">Video Explanation</p>
-                <p className="mt-0.5 text-[11px] text-ronin-muted">Placeholder — video player coming soon</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
