@@ -1,0 +1,18 @@
+{
+  "id": "two_sum",
+  "title": "Two Sum",
+  "difficulty": "easy",
+  "track": "arrays",
+  "estimatedMinutes": 10,
+  "stats": {
+    "attempts": 0,
+    "bestTimeSeconds": null,
+    "averageTimeSeconds": null,
+    "testsPassedBest": 0
+  },
+  "video": {
+    "firebaseStoragePath": "gs://ronin-videos/two_sum_intro.mp4",
+    "preload": true
+  },
+  "tags": ["array", "hash-table"]
+}
