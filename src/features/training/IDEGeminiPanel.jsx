@@ -7,18 +7,18 @@ import { Sparkles } from 'lucide-react'
  */
 export default function IDEGeminiPanel({ hasRun }) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-purple-500/20 bg-black/40">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-blue-500/20 bg-black/40">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-purple-500/15 bg-purple-500/[0.06] px-4 py-2.5">
+      <div className="flex shrink-0 items-center justify-between border-b border-blue-500/15 bg-blue-500/[0.06] px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-purple-400">
-            Gemini Analysis
+          <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-blue-400">
+            Ronin Helper
           </span>
         </div>
         <span className={[
           'h-1.5 w-1.5 rounded-full transition-colors duration-300',
-          hasRun ? 'bg-purple-400 animate-pulse' : 'bg-white/15',
+          hasRun ? 'bg-blue-400 animate-pulse' : 'bg-white/15',
         ].join(' ')} />
       </div>
 
@@ -32,7 +32,7 @@ export default function IDEGeminiPanel({ hasRun }) {
               animate={{ opacity: 1 }}
               className="space-y-3 text-sm text-ronin-muted"
             >
-              <p className="text-purple-300">Analysing your code…</p>
+              <p className="text-blue-300">Analysing your code…</p>
             </motion.div>
           ) : (
             <motion.div
@@ -43,15 +43,15 @@ export default function IDEGeminiPanel({ hasRun }) {
             >
               {/* Decorative gem icon */}
               <div className="relative">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-purple-500/25 bg-purple-500/10">
-                  <Sparkles className="h-7 w-7 text-purple-400/60" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-500/25 bg-blue-500/10">
+                  <Sparkles className="h-7 w-7 text-blue-400/60" />
                 </div>
-                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-purple-500/10 blur-xl" />
+                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-blue-500/10 blur-xl" />
               </div>
 
               <div>
-                <p className="text-[12px] font-semibold text-purple-300/70">
-                  Gemini API Response
+                <p className="text-[12px] font-semibold text-blue-300/70">
+                  Ronin Helper
                 </p>
                 <p className="mt-1 max-w-[200px] text-[11px] leading-relaxed text-white/20">
                   Run your code to receive AI-powered analysis, hints, and time/space complexity breakdown.
@@ -63,7 +63,7 @@ export default function IDEGeminiPanel({ hasRun }) {
                 {[85, 70, 55, 75, 45].map((w, i) => (
                   <div
                     key={i}
-                    className="h-1.5 rounded-full bg-purple-500/10"
+                    className="h-1.5 rounded-full bg-blue-500/10"
                     style={{ width: `${w}%` }}
                   />
                 ))}
