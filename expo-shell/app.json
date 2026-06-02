@@ -12,6 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0a0a0c"
     },
+    "androidNavigationBar": {
+      "visible": "always-hidden"
+    },
     "ios": {
       "supportsTablet": true
     },
