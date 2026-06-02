@@ -3,9 +3,11 @@ import { Sparkles } from 'lucide-react'
 
 /**
  * IDEGeminiPanel — left-bottom: Gemini API response area.
- * Placeholder until Run button triggers the API call.
+ * Renders scrollable chat log when hints or explanations are sent.
  */
-export default function IDEGeminiPanel({ hasRun }) {
+export default function IDEGeminiPanel({ hasRun, messages = [], isThinking = false }) {
+  const showChat = messages.length > 0
+
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-blue-500/20 bg-black/40">
       {/* Header */}
@@ -18,27 +20,53 @@ export default function IDEGeminiPanel({ hasRun }) {
         </div>
         <span className={[
           'h-1.5 w-1.5 rounded-full transition-colors duration-300',
-          hasRun ? 'bg-blue-400 animate-pulse' : 'bg-white/15',
+          hasRun || isThinking ? 'bg-blue-400 animate-pulse' : 'bg-white/15',
         ].join(' ')} />
       </div>
 
       {/* Body */}
       <div className="min-h-0 flex-1 overflow-y-auto p-4 scrollbar-hide">
         <AnimatePresence mode="wait">
-          {hasRun ? (
+          {isThinking ? (
             <motion.div
               key="streaming"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="space-y-3 text-sm text-ronin-muted"
             >
               <p className="text-blue-300">Analysing your code…</p>
+            </motion.div>
+          ) : showChat ? (
+            <motion.div
+              key="chat"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-3 text-xs"
+            >
+              {messages.map((msg, i) => {
+                const isBot = msg.role === 'bot'
+                const bubbleBg = isBot ? 'bg-blue-500/10 border-blue-500/20 text-blue-100' : 'bg-white/5 border-white/10 text-white/95'
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-xl border p-3 leading-relaxed ${bubbleBg}`}
+                  >
+                    <p className={`font-semibold mb-1 text-[9px] uppercase tracking-wider ${isBot ? 'text-blue-400' : 'text-gray-400'}`}>
+                      {isBot ? 'Gemini AI' : 'You'}
+                    </p>
+                    <p className="text-[12px] leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                  </div>
+                )
+              })}
             </motion.div>
           ) : (
             <motion.div
               key="idle"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="flex h-full flex-col items-center justify-center gap-3 text-center"
             >
               {/* Decorative gem icon */}

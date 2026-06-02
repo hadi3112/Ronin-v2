@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
  * IDEBottomBar — sticky bottom action bar with Run and Submit buttons.
  * No logic — just UI shell.
  */
-export default function IDEBottomBar({ onRun, onSubmit, isRunning }) {
+export default function IDEBottomBar({ onRun, onSubmit, isRunning, isSubmitEnabled }) {
   return (
     <div className="flex shrink-0 items-center justify-between gap-3 border-t border-white/[0.07] bg-black/60 px-6 py-3 backdrop-blur-md">
       {/* Left metadata */}
@@ -45,7 +45,10 @@ export default function IDEBottomBar({ onRun, onSubmit, isRunning }) {
           whileHover={{ scale: 1.03, y: -1 }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 340, damping: 22 }}
-          className="flex items-center gap-2 rounded-xl border border-ronin-crimson/50 bg-ronin-crimson/90 px-5 py-2.5 text-sm font-semibold tracking-wide text-white shadow-ronin-red transition-all hover:bg-ronin-crimson disabled:cursor-not-allowed disabled:opacity-50"
+          className={[
+            'flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold tracking-wide transition-all shadow-ronin-red',
+            'border-ronin-crimson/50 bg-ronin-crimson/90 text-white hover:bg-ronin-crimson cursor-pointer',
+          ].join(' ')}
           disabled={isRunning}
         >
           <Send className="h-3.5 w-3.5" />

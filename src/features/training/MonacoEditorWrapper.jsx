@@ -26,7 +26,7 @@ export default function MonacoEditorWrapper({ language = 'python', value, onChan
     <Editor
       height="100%"
       defaultLanguage={language}
-      defaultValue={value}
+      value={value}
       theme="vs-dark"
       onMount={handleEditorDidMount}
       onChange={onChange}
