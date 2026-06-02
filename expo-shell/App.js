@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Platform } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { StyleSheet, View, Platform, Animated, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -18,11 +18,44 @@ export default function App() {
   // This downloads/resolves the HTML file from the Metro bundle to the device cache
   const [assets] = useAssets([require('./assets/www/index.html')]);
 
-  // Edge-to-edge is enabled in app.json, so we don't need to manually configure NavigationBar
-  // Doing so crashes some Samsung devices due to SurfaceFlinger conflicts.
+  const [showSplash, setShowSplash] = useState(true);
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  // Pulsating pop animation loop for the centered Ronin logo container
   useEffect(() => {
-    // Nothing to do for navigation bar anymore
-  }, []);
+    if (!showSplash) return;
+    
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.05,
+          duration: 1100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 1100,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    
+    return () => pulse.stop();
+  }, [showSplash]);
+
+  const handleWebViewLoadEnd = () => {
+    console.log('✅ WebView Content Loaded Successfully');
+    // Smoothly fade out the splash screen overlay once the React webapp compiles and loads
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowSplash(false);
+    });
+  };
 
   // Select the appropriate source for the WebView
   const getSource = () => {
@@ -57,12 +90,25 @@ export default function App() {
         decelerationRate={0.998}
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
-        onLoadEnd={() => console.log('✅ WebView Content Loaded Successfully')}
+        onLoadEnd={handleWebViewLoadEnd}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
           console.warn('❌ WebView error: ', nativeEvent);
         }}
       />
+
+      {/* Premium Pulsating Native Splash Screen overlay */}
+      {showSplash && (
+        <Animated.View style={[styles.splashOverlay, { opacity: fadeAnim }]} pointerEvents="none">
+          <Animated.View style={[styles.logoContainer, { transform: [{ scale: scaleAnim }] }]}>
+            <Image
+              source={require('./assets/icon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </Animated.View>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -75,5 +121,29 @@ const styles = StyleSheet.create({
   webview: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  splashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000000', // Entirely black screen
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  logoContainer: {
+    backgroundColor: '#121214', // Rounded dark container hiding the gray png background
+    borderRadius: 24,
+    padding: 20,
+    // Whitish glow shadow (Android/iOS compatible)
+    shadowColor: '#ffffff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoImage: {
+    width: 100,
+    height: 100,
   },
 });
