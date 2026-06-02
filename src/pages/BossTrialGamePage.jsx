@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Code2 } from 'lucide-react'
 import NeonButton from '../components/ui/NeonButton.jsx'
 import BossTrialCombatPanel from '../features/game/BossTrialCombatPanel.jsx'
 import QuestionStage from '../features/game/QuestionStage.jsx'
@@ -11,6 +12,10 @@ import { useAdaptiveBossTrialGame } from '../features/game/hooks/useAdaptiveBoss
 import { mockProfile, updateXP } from '../data/mockUser.js'
 import { generateSessionId } from '../game/sessionId.js'
 import { useAuth } from '../hooks/useAuth.js'
+import {
+  writeDiagnosticSession,
+  questionToDomain,
+} from '../services/onboardingService.js'
 
 function SessionOutcome({
   phase,
@@ -21,6 +26,7 @@ function SessionOutcome({
   onReplay,
   onExit,
   onReviewChallenge,
+  isDiagnostic,
 }) {
   const margin = Math.abs(roninHp - bossHp)
   const won =
@@ -38,8 +44,12 @@ function SessionOutcome({
   const pctEnd = Math.min(100, (xpEnd / xpGoal) * 100)
 
   useEffect(() => {
-    updateXP(xpEnd)
-  }, [xpEnd])
+    // In diagnostic mode, XP is read-only — never touch the scoreboard
+    // FIREBASE_PLACEHOLDER: in normal mode this would also write to Firestore scoreboard
+    if (!isDiagnostic) {
+      updateXP(xpEnd)
+    }
+  }, [xpEnd, isDiagnostic])
 
   let title = 'Session complete'
   let subtitle = 'Boss Trial closed.'
@@ -140,7 +150,14 @@ function SessionOutcome({
 
 export default function BossTrialGamePage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const location = useLocation()
+  const { user, onboardingPhase, updateOnboardingPhase } = useAuth()
+
+  // When navigated here from the onboarding welcome modal, isDiagnostic=true.
+  // In diagnostic mode: no XP update, no scoreboard write, telemetry goes to
+  // diagnosticSession/{userId} and onboardingPhase advances on completion.
+  const isDiagnostic = Boolean(location.state?.isDiagnostic) || onboardingPhase === 'diagnostic_pending'
+
   const sessionId = useMemo(() => generateSessionId(), [])
   const userId = user?.uid ?? 'guest'
   const game = useAdaptiveBossTrialGame({ userId, sessionId })
@@ -151,6 +168,8 @@ export default function BossTrialGamePage() {
   const [isReloading, setIsReloading] = useState(false)
   const [toasts, setToasts] = useState([])
   const toastIdRef = useRef(0)
+  
+  const [interfaceMode, setInterfaceMode] = useState('ide') // Bypasses the mode selection dialog entirely for challenges
 
   const addToast = useCallback((message, type = 'default') => {
     const id = `toast_${toastIdRef.current++}`
@@ -209,6 +228,8 @@ export default function BossTrialGamePage() {
         addToast(`Incorrect answer. +${game.latestXPGain} XP`, 'evaluation')
       }
       
+      setTimeout(() => addToast('Agent Ronin Agent Updated', 'evaluation'), 800)
+      
       if (game.latestStreakLabel) {
         const streakMsg = game.expansion 
           ? `${game.latestStreakLabel} Increasing difficulty, more questions ahead!`
@@ -224,6 +245,95 @@ export default function BossTrialGamePage() {
     ['linked_list_memory', 'dfs_tree', 'circular_queue'].includes(game.current?.subtype)
   const isAndroid = /Android/i.test(navigator.userAgent)
   const usePuzzleLayout = isMobileLandscape && isPuzzleQuestion && isAndroid
+
+  // ── Diagnostic session-end handler ───────────────────────────────────────
+  // When running in diagnostic mode and the session ends, write telemetry to
+  // diagnosticSession/{userId} and advance the onboarding phase, then navigate
+  // back to dashboard with per-domain results for the results dialog.
+  // FIREBASE_PLACEHOLDER: writeDiagnosticSession → Firestore diagnosticSession/{userId}
+  // FIREBASE_PLACEHOLDER: updateOnboardingPhase  → Firestore users/{userId}.onboardingPhase
+  const diagnosticFiredRef = useRef(false)
+  useEffect(() => {
+    if (!isDiagnostic) return
+    if (game.phase === 'playing') return
+    if (diagnosticFiredRef.current) return
+    diagnosticFiredRef.current = true
+
+    const endedAt = new Date().toISOString()
+
+    // Build a per-domain result map from the answered questions array.
+    // Since BossTrialGamePage doesn't track per-question correctness in its
+    // own state (the adaptive agent does), we record domain presence here.
+    // The overall correct/total counts come from game.correctCount/totalQuestions.
+    // FIREBASE_PLACEHOLDER: extend useAdaptiveBossTrialGame to expose a per-question
+    // answered log for more granular domain-level correct/incorrect breakdown.
+    const domains = {}
+    if (game.questions) {
+      game.questions.forEach((q) => {
+        const domain = questionToDomain(q.bankType, q.subtype)
+        if (!domains[domain]) {
+          domains[domain] = { domain, correct: true, timeTakenSeconds: 0, answerChanged: false }
+        }
+      })
+    }
+
+    if (game.answeredQuestions) {
+      game.answeredQuestions.forEach((ans) => {
+        const domain = questionToDomain(ans.bankType, ans.subtype)
+        if (domains[domain]) {
+          domains[domain].correct = domains[domain].correct && ans.isCorrect
+          domains[domain].timeTakenSeconds += ans.timeMs / 1000
+        }
+      })
+    }
+
+    if (game.questions) {
+      game.questions.forEach((q) => {
+        const domain = questionToDomain(q.bankType, q.subtype)
+        const hasAnswers = game.answeredQuestions?.some(
+          (ans) => questionToDomain(ans.bankType, ans.subtype) === domain,
+        )
+        if (!hasAnswers && domains[domain]) {
+          domains[domain].correct = false
+        }
+      })
+    }
+
+    const totalScore = game.correctCount
+    const totalQuestions = game.totalQuestions
+
+    writeDiagnosticSession(userId, {
+      startedAt: new Date(Date.now() - 120000).toISOString(), // approximate start
+      endedAt,
+      sessionDurationSeconds: 120,
+      totalScore,
+      totalQuestions,
+      domains,
+      interfaceModeChosen: interfaceMode,
+    })
+
+    updateOnboardingPhase('training_grounds_pending').then(() => {
+      navigate('/dashboard', {
+        replace: true,
+        state: {
+          diagnosticComplete: true,
+          results: domains,
+          totalScore,
+          totalQuestions,
+        },
+      })
+    })
+  }, [
+    isDiagnostic,
+    game.phase,
+    game.questions,
+    game.answeredQuestions,
+    game.correctCount,
+    game.totalQuestions,
+    userId,
+    navigate,
+    updateOnboardingPhase,
+  ])
 
   const handleMcq = (choiceIdx) => {
     if (!game.current) return
@@ -271,6 +381,7 @@ export default function BossTrialGamePage() {
       </div>
     )
   }
+
 
   if (game.loadState === 'error') {
     return (
@@ -399,6 +510,7 @@ export default function BossTrialGamePage() {
                 bossHp={game.bossHp}
                 correctCount={game.correctCount}
                 totalQuestions={game.totalQuestions}
+                isDiagnostic={isDiagnostic}
                 onReplay={() => {
                   setIsReloading(true)
                   setTimeout(() => window.location.reload(), 800)

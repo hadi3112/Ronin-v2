@@ -42,6 +42,13 @@ export class GameEngine {
     if (isCorrect) this.bossHp = Math.max(0, this.bossHp - DAMAGE_TO_BOSS)
     else this.roninHp = Math.max(0, this.roninHp - DAMAGE_TO_RONIN)
 
+    // Only allow KO if we have reached the last question, otherwise clamp HP to at least 1 so the session does not terminate
+    const hasMoreQuestions = this.index + 1 < this.questions.length
+    if (hasMoreQuestions) {
+      if (this.bossHp <= 0) this.bossHp = 1
+      if (this.roninHp <= 0) this.roninHp = 1
+    }
+
     if (this.bossHp <= 0) {
       this.phase = 'victory'
       return { phase: this.phase, roninHp: this.roninHp, bossHp: this.bossHp, index: this.index, lastCorrect: isCorrect }

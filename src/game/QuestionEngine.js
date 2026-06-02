@@ -1,5 +1,6 @@
 import { buildDfsTreePayload } from './dfsTreeGenerator.js'
 import { buildLinkedListDragPayload } from './linkedListPuzzle.js'
+import { getCompletedTrainingGroundsProblems } from '../services/trainingGroundsService.js'
 
 const SESSION_TOTAL = 10
 const COUNTS = { stacktrace: 3, code_completion: 3, conceptual: 2, system_architecture: 2 }
@@ -74,19 +75,49 @@ function buildSystemQuestion(bank, sysKey, rng, difficulty = {}) {
   return null
 }
 
+function isQuestionAllowed(qId, completedProblems) {
+  if (qId.includes('arrays')) {
+    return completedProblems.includes('two_sum')
+  }
+  if (qId.includes('linkedlist')) {
+    return completedProblems.includes('linked_list_reversal')
+  }
+  if (qId.includes('queue')) {
+    return completedProblems.includes('circular_queue')
+  }
+  if (qId.includes('dfs')) {
+    return completedProblems.includes('dfs_traversal')
+  }
+  return true
+}
+
 /**
  * @param {import('./QuestionBankManager.js').QuestionBankShape} bank
- * @param {{ rng?: () => number; sessionKey?: string; difficulty?: { linkedListNodes?: number; dfsBranching?: number; dfsDepth?: number; ringBufferSize?: number } }} [opts]
+ * @param {{ rng?: () => number; sessionKey?: string; userId?: string; difficulty?: { linkedListNodes?: number; dfsBranching?: number; dfsDepth?: number; ringBufferSize?: number } }} [opts]
  * @returns {object[]}
  */
 export function sampleSessionQuestions(bank, opts = {}) {
   const rng = opts.rng ?? Math.random
   const difficulty = opts.difficulty ?? {}
   const h = opts.sessionKey ? hashSessionKey(opts.sessionKey) : Math.floor(rng() * 0xffffffff)
+  const userId = opts.userId ?? 'guest'
+
+  const completedProblems = getCompletedTrainingGroundsProblems(userId)
+
+  // Filter bank pools to only allowed questions based on completed topics
+  const allowedStacktrace = bank.stacktrace.filter((s) => isQuestionAllowed(s.id, completedProblems))
+  const allowedCodeCompletion = bank.code_completion.filter((s) => isQuestionAllowed(s.id, completedProblems))
+  const allowedConceptual = bank.conceptual.filter((s) => isQuestionAllowed(s.id, completedProblems))
+
+  // Fallback to complete pool if allowed subset is too small to satisfy COUNT demands (except in diagnostic mode where we strictly enforce allowed questions)
+  const isDiagnosticRun = completedProblems.length === 0
+  const finalStacktracePool = (allowedStacktrace.length >= COUNTS.stacktrace || isDiagnosticRun) ? allowedStacktrace : bank.stacktrace
+  const finalCodeCompletionPool = (allowedCodeCompletion.length >= COUNTS.code_completion || isDiagnosticRun) ? allowedCodeCompletion : bank.code_completion
+  const finalConceptualPool = (allowedConceptual.length >= COUNTS.conceptual || isDiagnosticRun) ? allowedConceptual : bank.conceptual
 
   const used = new Set()
   const stacktrace = pickUnique(
-    bank.stacktrace.map((s) => ({
+    finalStacktracePool.map((s) => ({
       bankType: 'stacktrace',
       id: s.id,
       payload: s,
@@ -95,18 +126,21 @@ export function sampleSessionQuestions(bank, opts = {}) {
     rng,
     used,
   )
+  
+  // In diagnostic run, we pick 2 code completions instead of 3 to balance the total question count to exactly 10 since we are forcing 3 system puzzles
+  const ccCount = isDiagnosticRun ? 2 : COUNTS.code_completion
   const code_completion = pickUnique(
-    bank.code_completion.map((s) => ({
+    finalCodeCompletionPool.map((s) => ({
       bankType: 'code_completion',
       id: s.id,
       payload: s,
     })),
-    COUNTS.code_completion,
+    ccCount,
     rng,
     used,
   )
   const conceptual = pickUnique(
-    bank.conceptual.map((s) => ({
+    finalConceptualPool.map((s) => ({
       bankType: 'conceptual',
       id: s.id,
       payload: s,
@@ -123,41 +157,81 @@ export function sampleSessionQuestions(bank, opts = {}) {
   const hasRing = hasRingMain || hasRingAlt
   const hasTree = Boolean(sysBank.dfs_tree)
 
-  // --- SLOT 1: Always linked list ---
   const sysList = []
-  if (hasLinkedList) {
+
+  if (isDiagnosticRun) {
+    // In diagnostic mode, we strictly force all three visual Phaser system puzzles (LL, Tree traversal, Circular queue) to appear
     const ll = buildSystemQuestion(bank, 'linked_list_memory', rng, difficulty)
     if (ll) {
       if (!used.has(ll.id)) used.add(ll.id)
       ll.id = `${ll.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000).toString(16).padStart(4, '0')}`
       sysList.push(ll)
     }
+    
+    const dfs = buildSystemQuestion(bank, 'dfs_tree', rng, difficulty)
+    if (dfs) {
+      if (!used.has(dfs.id)) used.add(dfs.id)
+      dfs.id = `${dfs.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000).toString(16).padStart(4, '0')}`
+      sysList.push(dfs)
+    }
+
+    const cq = buildSystemQuestion(bank, 'circular_queue', rng, difficulty)
+    if (cq) {
+      if (!used.has(cq.id)) used.add(cq.id)
+      cq.id = `${cq.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000).toString(16).padStart(4, '0')}`
+      sysList.push(cq)
+    }
+  } else {
+    // Normal progress-based system question loading
+    const allowedRing = completedProblems.includes('circular_queue') && hasRing
+    const allowedTree = completedProblems.includes('dfs_traversal') && hasTree
+
+    // --- SLOT 1: Always linked list (if completed in Training Grounds) ---
+    if (completedProblems.includes('linked_list_reversal') && hasLinkedList) {
+      const ll = buildSystemQuestion(bank, 'linked_list_memory', rng, difficulty)
+      if (ll) {
+        if (!used.has(ll.id)) used.add(ll.id)
+        ll.id = `${ll.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000).toString(16).padStart(4, '0')}`
+        sysList.push(ll)
+      }
+    }
+
+    // --- SLOT 2: Pick one from remaining allowed puzzle families (ring or DFS) ---
+    const secondFamilies = []
+    if (allowedRing) secondFamilies.push('__ring__')
+    if (allowedTree) secondFamilies.push('dfs_tree')
+
+    if (secondFamilies.length > 0) {
+      const fam = secondFamilies[h % secondFamilies.length]
+      let sysKey2 = 'dfs_tree'
+      if (fam === '__ring__') {
+        const ringKeys = []
+        if (hasRingMain) ringKeys.push('circular_queue')
+        if (hasRingAlt) ringKeys.push('circular_queue_alt')
+        sysKey2 = ringKeys[(h >>> 8) % ringKeys.length] ?? 'circular_queue'
+      }
+      const sys2 = buildSystemQuestion(bank, sysKey2, rng, difficulty)
+      if (sys2) {
+        if (!used.has(sys2.id)) used.add(sys2.id)
+        sys2.id = `${sys2.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000).toString(16).padStart(4, '0')}`
+        sysList.push(sys2)
+      }
+    }
   }
 
-  // --- SLOT 2: Pick one from remaining puzzle families (ring or DFS) ---
-  const secondFamilies = []
-  if (hasRing) secondFamilies.push('__ring__')
-  if (hasTree) secondFamilies.push('dfs_tree')
+  let assembled = [...stacktrace, ...code_completion, ...conceptual, ...sysList]
 
-  if (secondFamilies.length > 0) {
-    const fam = secondFamilies[h % secondFamilies.length]
-    let sysKey2 = 'dfs_tree'
-    if (fam === '__ring__') {
-      const ringKeys = []
-      if (hasRingMain) ringKeys.push('circular_queue')
-      if (hasRingAlt) ringKeys.push('circular_queue_alt')
-      sysKey2 = ringKeys[(h >>> 8) % ringKeys.length] ?? 'circular_queue'
-    }
-    const sys2 = buildSystemQuestion(bank, sysKey2, rng, difficulty)
-    if (sys2) {
-      if (!used.has(sys2.id)) used.add(sys2.id)
-      sys2.id = `${sys2.id}__${h.toString(36)}_${Math.floor(rng() * 0x10000).toString(16).padStart(4, '0')}`
-      sysList.push(sys2)
-    }
+  // Backfill with standard questions if some system puzzles were filtered out
+  if (assembled.length < SESSION_TOTAL) {
+    const extraNeeded = SESSION_TOTAL - assembled.length
+    const allStandardPool = [
+      ...finalStacktracePool.map((s) => ({ bankType: 'stacktrace', id: s.id, payload: s })),
+      ...finalCodeCompletionPool.map((s) => ({ bankType: 'code_completion', id: s.id, payload: s })),
+      ...finalConceptualPool.map((s) => ({ bankType: 'conceptual', id: s.id, payload: s })),
+    ]
+    const extraPicks = pickUnique(allStandardPool, extraNeeded, rng, used)
+    assembled = [...assembled, ...extraPicks]
   }
-
-  // If we still have fewer than 2 puzzles (e.g. only linked list available), that's fine — fill with what we have
-  const assembled = [...stacktrace, ...code_completion, ...conceptual, ...sysList]
 
   shuffleInPlace(assembled, rng)
 
@@ -175,3 +249,4 @@ export function sampleSessionQuestions(bank, opts = {}) {
 }
 
 export const QUESTION_ENGINE = { sampleSessionQuestions, SESSION_TOTAL }
+

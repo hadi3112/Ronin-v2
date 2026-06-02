@@ -23,6 +23,7 @@ export function useAdaptiveBossTrialGame(ids) {
   const [loadError, setLoadError] = useState(null)
   const [questions, setQuestions] = useState(null)
   const [correctCount, setCorrectCount] = useState(0)
+  const [answeredQuestions, setAnsweredQuestions] = useState([])
 
   const engineRef = useRef(null)
   const answerStartTimeRef = useRef(0)
@@ -54,7 +55,8 @@ export function useAdaptiveBossTrialGame(ids) {
           defaultFirebaseService,
           'python',
           ids.sessionId,
-          difficulty
+          difficulty,
+          ids.userId
         )
         if (cancelled) return
 
@@ -99,6 +101,20 @@ export function useAdaptiveBossTrialGame(ids) {
     const timeMs = performance.now() - answerStartTimeRef.current
 
     if (isCorrect && !wasSkipped) setCorrectCount(c => c + 1)
+    
+    if (currentQ) {
+      setAnsweredQuestions(prev => [
+        ...prev,
+        {
+          id: currentQ.id,
+          bankType: currentQ.bankType,
+          subtype: currentQ.subtype,
+          isCorrect: isCorrect && !wasSkipped,
+          wasSkipped,
+          timeMs,
+        }
+      ])
+    }
     
     // Track last answer for toast messages
     setLastAnswerCorrect(isCorrect && !wasSkipped)
@@ -200,6 +216,7 @@ export function useAdaptiveBossTrialGame(ids) {
     applyAnswer,
     correctCount,
     totalQuestions: dynamicQuestionCount,
+    answeredQuestions,
     
     latestXPGain,
     latestStreakLabel,
