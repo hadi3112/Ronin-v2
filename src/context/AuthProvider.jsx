@@ -1,9 +1,13 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import {
   signInWithEmailPasswordStub,
   signOutStub,
 } from '../services/firebaseAuth.js'
 import { AuthContext } from './auth-context-core.js'
+import {
+  getOnboardingPhase,
+  setOnboardingPhase as persistOnboardingPhase,
+} from '../services/onboardingService.js'
 
 const STORAGE_KEY = 'ronin.session.v1'
 
@@ -38,6 +42,20 @@ export default function AuthProvider({ children }) {
   const [preferences, setPreferences] = useState(
     /** @type {UserPreferences | null} */ (stored?.preferences ?? null),
   )
+  const [onboardingPhase, setOnboardingPhaseState] = useState(
+    /** @type {import('../services/onboardingService.js').OnboardingPhase | null} */ (null),
+  )
+
+  // Load onboardingPhase from storage whenever user changes
+  useEffect(() => {
+    if (!user) {
+      setOnboardingPhaseState(null)
+      return
+    }
+    getOnboardingPhase(user.uid).then((phase) => {
+      setOnboardingPhaseState(phase)
+    })
+  }, [user?.uid])
 
   const persist = useCallback((next) => {
     writeSession({
@@ -61,6 +79,10 @@ export default function AuthProvider({ children }) {
         gettingStartedDone: false,
         preferences: null,
       })
+      // Load onboarding phase for the newly logged-in user
+      getOnboardingPhase(nextUser.uid).then((phase) => {
+        setOnboardingPhaseState(phase)
+      })
     },
     [persist],
   )
@@ -70,6 +92,7 @@ export default function AuthProvider({ children }) {
     setUser(null)
     setGettingStartedDone(false)
     setPreferences(null)
+    setOnboardingPhaseState(null)
     writeSession(null)
   }, [])
 
@@ -90,8 +113,31 @@ export default function AuthProvider({ children }) {
         gettingStartedDone: true,
         preferences: prefs,
       })
+      // First time a user saves preferences → begin diagnostic onboarding
+      // FIREBASE_PLACEHOLDER: this also calls setOnboardingPhase which writes to users/{userId}.onboardingPhase
+      if (!onboardingPhase && user) {
+        const uid = user.uid
+        persistOnboardingPhase(uid, 'diagnostic_pending').then(() => {
+          setOnboardingPhaseState('diagnostic_pending')
+        })
+      }
     },
-    [persist, user],
+    [persist, user, onboardingPhase],
+  )
+
+  /**
+   * Update the onboarding phase both in storage and local state.
+   * Call this to advance through: diagnostic_pending → training_grounds_pending → onboarding_complete
+   * FIREBASE_PLACEHOLDER: replace persistOnboardingPhase internals with real Firestore setDoc call.
+   * @param {import('../services/onboardingService.js').OnboardingPhase} phase
+   */
+  const updateOnboardingPhase = useCallback(
+    async (phase) => {
+      if (!user) return
+      await persistOnboardingPhase(user.uid, phase)
+      setOnboardingPhaseState(phase)
+    },
+    [user],
   )
 
   const value = useMemo(
@@ -101,6 +147,8 @@ export default function AuthProvider({ children }) {
       preferences,
       isAuthenticated: Boolean(user),
       isOnboardingComplete: Boolean(user && preferences),
+      onboardingPhase,
+      updateOnboardingPhase,
       login,
       logout,
       completeGettingStarted,
@@ -110,6 +158,8 @@ export default function AuthProvider({ children }) {
       user,
       gettingStartedDone,
       preferences,
+      onboardingPhase,
+      updateOnboardingPhase,
       login,
       logout,
       completeGettingStarted,
