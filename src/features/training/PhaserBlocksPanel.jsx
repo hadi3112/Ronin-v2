@@ -306,6 +306,14 @@ export default function PhaserBlocksPanel({
       scale: {
         mode: Phaser.Scale.NONE,
       },
+      input: {
+        touch: {
+          capture: false
+        },
+        mouse: {
+          capture: false
+        }
+      }
     })
     gameRef.current = game
 
@@ -319,6 +327,7 @@ export default function PhaserBlocksPanel({
     <div
       ref={containerRef}
       className="h-full min-h-0 w-full overflow-y-auto overflow-x-hidden custom-scrollbar rounded-2xl border border-white/[0.08] bg-black/40"
+      style={{ touchAction: 'pan-y' }}
       aria-label="Phaser Drag-and-Drop Code Blocks Canvas"
     />
   )
