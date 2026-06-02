@@ -22,6 +22,22 @@ export default function App() {
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
+  // Configure Android bottom system navigation bar to run in immersive sticky mode.
+  // The bar will auto-hide and only reappear temporarily when swiped from the screen edge.
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const configureNavigationBar = async () => {
+        try {
+          await NavigationBar.setBehaviorAsync('sticky-immersive');
+          await NavigationBar.setVisibilityAsync('hidden');
+        } catch (error) {
+          console.warn('⚠️ NavigationBar configuration failed: ', error);
+        }
+      };
+      configureNavigationBar();
+    }
+  }, []);
+
   // Pulsating pop animation loop for the centered Ronin logo container
   useEffect(() => {
     if (!showSplash) return;
