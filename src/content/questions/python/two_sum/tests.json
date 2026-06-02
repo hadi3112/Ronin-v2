@@ -22,5 +22,21 @@
       "target": 6
     },
     "expected": [0, 1]
+  },
+  {
+    "id": "tc-4",
+    "input": {
+      "nums": [1],
+      "target": 1
+    },
+    "expected": []
+  },
+  {
+    "id": "tc-5",
+    "input": {
+      "nums": [15, 14, 22, 28, 35, 40],
+      "target": 49
+    },
+    "expected": [1, 4]
   }
 ]
