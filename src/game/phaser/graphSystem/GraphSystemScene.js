@@ -143,9 +143,16 @@ export class GraphSystemScene extends Phaser.Scene {
         const cx1 = startX - dist * 0.3
         const cx2 = endX + dist * 0.3
 
+        const curve = new Phaser.Curves.CubicBezier(
+          new Phaser.Math.Vector2(startX, startY),
+          new Phaser.Math.Vector2(cx1, curveY1),
+          new Phaser.Math.Vector2(cx2, curveY2),
+          new Phaser.Math.Vector2(endX, endY)
+        )
+        const points = curve.getPoints(24)
         g.beginPath()
         g.moveTo(startX, startY)
-        g.bezierCurveTo(cx1, curveY1, cx2, curveY2, endX, endY)
+        points.forEach((p) => g.lineTo(p.x, p.y))
         g.strokePath()
 
         const arrowSize = 10 * cardScale
