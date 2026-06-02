@@ -1,0 +1,73 @@
+[
+  {
+    "id": "tc-1",
+    "input": {
+      "tree": {
+        "val": 1,
+        "left": {
+          "val": 2,
+          "left": { "val": 4, "left": null, "right": null },
+          "right": { "val": 5, "left": null, "right": null }
+        },
+        "right": { "val": 3, "left": null, "right": null }
+      }
+    },
+    "expected": [1, 2, 4, 5, 3]
+  },
+  {
+    "id": "tc-2",
+    "input": {
+      "tree": {
+        "val": 1,
+        "left": null,
+        "right": {
+          "val": 2,
+          "left": null,
+          "right": { "val": 3, "left": null, "right": null }
+        }
+      }
+    },
+    "expected": [1, 2, 3]
+  },
+  {
+    "id": "tc-3",
+    "input": {
+      "tree": {
+        "val": 10,
+        "left": { "val": 5, "left": null, "right": null },
+        "right": { "val": 15, "left": null, "right": null }
+      }
+    },
+    "expected": [10, 5, 15]
+  },
+  {
+    "id": "tc-hidden-1",
+    "input": {
+      "tree": {
+        "val": 7,
+        "left": null,
+        "right": null
+      }
+    },
+    "expected": [7]
+  },
+  {
+    "id": "tc-hidden-2",
+    "input": {
+      "tree": {
+        "val": 1,
+        "left": {
+          "val": 2,
+          "left": {
+            "val": 3,
+            "left": { "val": 4, "left": null, "right": null },
+            "right": null
+          },
+          "right": null
+        },
+        "right": null
+      }
+    },
+    "expected": [1, 2, 3, 4]
+  }
+]

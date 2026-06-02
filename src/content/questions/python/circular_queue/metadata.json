@@ -1,0 +1,18 @@
+{
+  "id": "circular_queue",
+  "title": "Build a Circular Queue",
+  "difficulty": "easy",
+  "track": "queues",
+  "estimatedMinutes": 15,
+  "stats": {
+    "attempts": 0,
+    "bestTimeSeconds": null,
+    "averageTimeSeconds": null,
+    "testsPassedBest": 0
+  },
+  "video": {
+    "firebaseStoragePath": "gs://ronin-videos/circular_queue_intro.mp4",
+    "preload": true
+  },
+  "tags": ["queue", "circular", "modulo", "data-structures"]
+}

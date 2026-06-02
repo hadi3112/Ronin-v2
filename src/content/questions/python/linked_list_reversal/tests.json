@@ -1,0 +1,37 @@
+[
+  {
+    "id": "tc-1",
+    "input": {
+      "list": [1, 2, 3, 4, 5]
+    },
+    "expected": [5, 4, 3, 2, 1]
+  },
+  {
+    "id": "tc-2",
+    "input": {
+      "list": [1, 2, 3]
+    },
+    "expected": [3, 2, 1]
+  },
+  {
+    "id": "tc-3",
+    "input": {
+      "list": [10, 20]
+    },
+    "expected": [20, 10]
+  },
+  {
+    "id": "tc-hidden-1",
+    "input": {
+      "list": [1]
+    },
+    "expected": [1]
+  },
+  {
+    "id": "tc-hidden-2",
+    "input": {
+      "list": [7, 14, 21, 28, 35, 42]
+    },
+    "expected": [42, 35, 28, 21, 14, 7]
+  }
+]

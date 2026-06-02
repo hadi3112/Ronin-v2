@@ -1,0 +1,62 @@
+[
+  {
+    "id": "tc-1",
+    "input": {
+      "capacity": 3,
+      "operations": ["enqueue 10", "enqueue 20", "enqueue 30", "dequeue"]
+    },
+    "expected": {
+      "enqueue_results": [true, true, true],
+      "dequeue_result": 10
+    }
+  },
+  {
+    "id": "tc-2",
+    "input": {
+      "capacity": 3,
+      "operations": ["enqueue 5", "dequeue", "enqueue 15", "dequeue"]
+    },
+    "expected": {
+      "dequeue_results": [5, 15]
+    }
+  },
+  {
+    "id": "tc-3",
+    "input": {
+      "capacity": 2,
+      "operations": ["enqueue 1", "enqueue 2", "enqueue 3"]
+    },
+    "expected": {
+      "enqueue_results": [true, true, false]
+    }
+  },
+  {
+    "id": "tc-hidden-1",
+    "input": {
+      "capacity": 1,
+      "operations": ["dequeue"]
+    },
+    "expected": {
+      "dequeue_result": null
+    }
+  },
+  {
+    "id": "tc-hidden-2",
+    "input": {
+      "capacity": 3,
+      "operations": [
+        "enqueue 10", "enqueue 20", "enqueue 30",
+        "dequeue", "dequeue", "dequeue",
+        "enqueue 40", "enqueue 50"
+      ],
+      "expected": {
+        "final_dequeue_results": [10, 20, 30],
+        "final_enqueue_results": [true, true]
+      }
+    },
+    "expected": {
+      "dequeue_results": [10, 20, 30],
+      "enqueue_results_after_empty": [true, true]
+    }
+  }
+]

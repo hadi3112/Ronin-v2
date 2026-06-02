@@ -3,158 +3,368 @@
 /** @typedef {{ id: string; questionText: string; prompt: string; choices: string[]; answerIndex: number }} ConceptualSeed */
 
 const CC_PROMPT =
-  'Complete the snippet by choosing the expression that correctly fills every blank (`__`) so the code runs as intended in Python 3.'
+  'Complete the snippet by choosing the expression that correctly fills the blank (`__`) so the code runs as intended in Python 3.'
 
 /** @type {StacktraceSeed[]} */
 export const STACKTRACE_SEED = [
+  // --- ARRAYS / TWO SUM ---
   {
-    id: 'st_a',
-    questionText: 'Read the traceback. Which explanation best matches what went wrong?',
+    id: 'st_arrays_1',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this array retrieval?',
     lines: [
       'Traceback (most recent call last):',
-      '  File "main.py", line 8',
-      '    print(arr[10])',
+      '  File "solution.py", line 4, in solution',
+      '    print(nums[len(nums)])',
       'IndexError: list index out of range',
     ],
-    choices: ['Index past end of list', 'SyntaxError in print()', 'KeyError on arr'],
+    choices: ['List indexing is 0-based, so len(nums) is out of bounds', 'The list was modified asynchronously', 'KeyError because nums is a dictionary'],
     answerIndex: 0,
   },
   {
-    id: 'st_b',
-    questionText: 'Read the traceback. Which explanation best matches what went wrong?',
+    id: 'st_arrays_2',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this lookup?',
     lines: [
       'Traceback (most recent call last):',
-      '  File "app.py", line 3, in <module>',
-      '    x = "2" + 3',
-      'TypeError: can only concatenate str (not "int") to str',
+      '  File "solution.py", line 7, in solution',
+      '    val = nums["first"]',
+      'TypeError: list indices must be integers or slices, not str',
     ],
-    choices: ['Mixing str and int with +', 'Division by zero', 'Recursion depth exceeded'],
+    choices: ['Passing a string key to index into a list instead of a dict', 'The dictionary is missing the "first" key value', 'Out of memory while retrieving slice'],
+    answerIndex: 0,
+  },
+  // --- LINKED LISTS ---
+  {
+    id: 'st_linkedlist_1',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this list traversal?',
+    lines: [
+      'Traceback (most recent call last):',
+      '  File "list.py", line 14, in reverse',
+      '    curr = curr.next',
+      "AttributeError: 'NoneType' object has no attribute 'next'",
+    ],
+    choices: ['Traversed past the tail node, trying to access .next on None', 'Node constructor did not declare .next pointer', 'Infinite recursion limit exceeded'],
     answerIndex: 0,
   },
   {
-    id: 'st_c',
-    questionText: 'Read the traceback. Which explanation best matches what went wrong?',
+    id: 'st_linkedlist_2',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in node allocation?',
     lines: [
       'Traceback (most recent call last):',
-      '  File "data.py", line 5, in <module>',
-      '    print(user["email"])',
-      "KeyError: 'email'",
+      '  File "list.py", line 3, in <module>',
+      '    head = Node(10)',
+      'TypeError: Node() takes no arguments',
     ],
-    choices: ["Missing key in dict", 'List index error', 'ImportError for email'],
+    choices: ['Node class lacks an __init__ constructor or does not accept val', 'Memory assignment error on new allocation', 'Missing return value inside reverse'],
+    answerIndex: 0,
+  },
+  // --- CIRCULAR QUEUES ---
+  {
+    id: 'st_queue_1',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this queue insertion?',
+    lines: [
+      'Traceback (most recent call last):',
+      '  File "queue.py", line 11, in enqueue',
+      '    self.queue[self.tail] = value',
+      'IndexError: list assignment index out of range',
+    ],
+    choices: ['Index exceeded bounds because of missing modulo wrap-around calculation', 'Adding key element to empty queue array', 'AttributeError on tail pointer object'],
     answerIndex: 0,
   },
   {
-    id: 'st_d',
-    questionText: 'Read the traceback. Which explanation best matches what went wrong?',
+    id: 'st_queue_2',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this dequeue call?',
     lines: [
       'Traceback (most recent call last):',
-      '  File "api.py", line 12, in <module>',
-      '    resp.raise_for_status()',
-      'AttributeError: \'NoneType\' object has no attribute \'raise_for_status\'',
+      '  File "queue.py", line 22, in dequeue',
+      '    if self.size == 0:',
+      "AttributeError: 'CircularQueue' object has no attribute 'size'",
     ],
-    choices: ['Calling method on None', 'Invalid HTTP verb', 'JSON decode failure'],
+    choices: ['Forgot to declare or initialize self.size inside constructor __init__', 'ImportError of circular dependencies', 'TypeError comparing None with zero'],
+    answerIndex: 0,
+  },
+  // --- DFS TREES ---
+  {
+    id: 'st_dfs_1',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this tree search?',
+    lines: [
+      'Traceback (most recent call last):',
+      '  File "tree.py", line 6, in dfs',
+      '    result = result + dfs(root.left)',
+      '  [Previous line repeated 995 more times]',
+      'RecursionError: maximum recursion depth exceeded in comparison',
+    ],
+    choices: ['Missing base case check (if root is None) causing infinite recursion', 'The binary tree height exceeds 1000 active nodes', 'Variable result was shadowed by local scope'],
     answerIndex: 0,
   },
   {
-    id: 'st_e',
-    questionText: 'Read the traceback. Which explanation best matches what went wrong?',
+    id: 'st_dfs_2',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this node visit?',
     lines: [
       'Traceback (most recent call last):',
-      '  File "parse.py", line 2, in <module>',
-      '    value = int("12a")',
-      'ValueError: invalid literal for int() with base 10: \'12a\'',
+      '  File "tree.py", line 9, in dfs',
+      '    result = [root.val]',
+      "AttributeError: 'NoneType' object has no attribute 'val'",
     ],
-    choices: ['Non-numeric string passed to int()', 'Float overflow', 'Unicode decode error'],
+    choices: ['Accessing .val on None because of missing empty-node check guard', 'Incorrect tree node initialization parameter signature', 'TypeError on list concatenation'],
+    answerIndex: 0,
+  },
+  // --- GENERAL PYTHON CORE ---
+  {
+    id: 'st_general_1',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this concatenation?',
+    lines: [
+      'Traceback (most recent call last):',
+      '  File "solution.py", line 3, in solution',
+      '    print("Result: " + 42.0)',
+      'TypeError: can only concatenate str (not "float") to str',
+    ],
+    choices: ['Trying to concatenate a float to a string directly', 'Variables were not initialized', 'Division by zero inside print'],
+    answerIndex: 0,
+  },
+  {
+    id: 'st_general_2',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this string modification?',
+    lines: [
+      'Traceback (most recent call last):',
+      '  File "solution.py", line 5, in solution',
+      '    text.append("world")',
+      "AttributeError: 'str' object has no attribute 'append'",
+    ],
+    choices: ['Strings are immutable and do not have an append method (use concatenation or lists instead)', 'The variable text was empty', 'IndexError on character lookup'],
+    answerIndex: 0,
+  },
+  {
+    id: 'st_general_3',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this dictionary retrieval?',
+    lines: [
+      'Traceback (most recent call last):',
+      '  File "solution.py", line 2, in solution',
+      '    val = info["age"]',
+      "KeyError: 'age'",
+    ],
+    choices: ['The dictionary does not contain the key "age"', 'info is a list, not a dictionary', 'Syntax error in bracket declaration'],
+    answerIndex: 0,
+  },
+  {
+    id: 'st_general_4',
+    questionText: 'Read the traceback. Which explanation best matches what went wrong in this calculation?',
+    lines: [
+      'Traceback (most recent call last):',
+      '  File "solution.py", line 4, in solution',
+      '    avg = total / count',
+      'ZeroDivisionError: division by zero',
+    ],
+    choices: ['The count variable is equal to zero', 'The total variable is None', 'TypeError when dividing floats'],
     answerIndex: 0,
   },
 ]
 
 /** @type {CodeCompletionSeed[]} */
 export const CODE_COMPLETION_SEED = [
+  // --- ARRAYS / TWO SUM ---
   {
-    id: 'cc_a',
+    id: 'cc_arrays_1',
     questionText: CC_PROMPT,
-    code: 'def add(a, b):\n    return __',
-    choices: ['a - b', 'a + b', 'a // b'],
-    answerIndex: 1,
-  },
-  {
-    id: 'cc_b',
-    questionText: CC_PROMPT,
-    code: 'nums = [1, 2, 3]\nprint(__(nums))',
-    choices: ['len', 'sum', 'sorted'],
+    code: 'def get_indices(nums):\n    for idx, val in __(nums):\n        print(idx, val)',
+    choices: ['enumerate', 'range', 'len'],
     answerIndex: 0,
   },
   {
-    id: 'cc_c',
+    id: 'cc_arrays_2',
     questionText: CC_PROMPT,
-    code: 'x = 5\ny = 2\nprint(x __ y)',
-    choices: ['^', '**', '//'],
-    answerIndex: 1,
+    code: 'seen = {}\nfor i, n in enumerate(nums):\n    diff = target - n\n    if diff __ seen:\n        return [seen[diff], i]',
+    choices: ['in', 'is', '=='],
+    answerIndex: 0,
   },
+  // --- LINKED LISTS ---
   {
-    id: 'cc_d',
+    id: 'cc_linkedlist_1',
     questionText: CC_PROMPT,
-    code: 's = "hello"\nprint(s.__)',
-    choices: ['upper()', 'UPPER()', 'toUpperCase()'],
+    code: 'while curr:\n    next_node = __\n    curr.next = prev\n    prev = curr\n    curr = next_node',
+    choices: ['curr.next', 'curr', 'prev'],
     answerIndex: 0,
   },
   {
-    id: 'cc_e',
+    id: 'cc_linkedlist_2',
     questionText: CC_PROMPT,
-    code: 'items = [10, 20, 30]\nprint(items.__)',
-    choices: ['end()', 'last()', '[-1]'],
-    answerIndex: 2,
+    code: '# Reversal exit return statement\nwhile curr:\n    # pointer swapping...\n    curr = next_node\nreturn __',
+    choices: ['prev', 'curr', 'head'],
+    answerIndex: 0,
+  },
+  // --- CIRCULAR QUEUES ---
+  {
+    id: 'cc_queue_1',
+    questionText: CC_PROMPT,
+    code: '# Update circular tail index\nself.tail = (self.tail + 1) __ self.capacity',
+    choices: ['%', '//', '**'],
+    answerIndex: 0,
+  },
+  {
+    id: 'cc_queue_2',
+    questionText: CC_PROMPT,
+    code: '# Dequeue head index advance\nval = self.queue[self.head]\nself.head = (self.head + 1) __ self.capacity',
+    choices: ['%', '//', '/'],
+    answerIndex: 0,
+  },
+  // --- DFS TREES ---
+  {
+    id: 'cc_dfs_1',
+    questionText: CC_PROMPT,
+    code: 'def dfs(root):\n    if not root: return __\n    return [root.val] + dfs(root.left) + dfs(root.right)',
+    choices: ['[]', 'None', '0'],
+    answerIndex: 0,
+  },
+  {
+    id: 'cc_dfs_2',
+    questionText: CC_PROMPT,
+    code: '# Combine current value with recursive results\nresult = [root.val]\nresult = result __ dfs(root.left) __ dfs(root.right)',
+    choices: ['+ and +', 'extend and extend', 'append and append'],
+    answerIndex: 0,
+  },
+  // --- GENERAL PYTHON CORE ---
+  {
+    id: 'cc_general_1',
+    questionText: CC_PROMPT,
+    code: '# Filter odd numbers from a list\nodds = [x for x in nums if x __ 2 != 0]',
+    choices: ['%', '//', '/'],
+    answerIndex: 0,
+  },
+  {
+    id: 'cc_general_2',
+    questionText: CC_PROMPT,
+    code: '# Return default value if key is missing from dictionary\nval = my_dict.__("status", "pending")',
+    choices: ['get', 'pop', 'keys'],
+    answerIndex: 0,
+  },
+  {
+    id: 'cc_general_3',
+    questionText: CC_PROMPT,
+    code: '# Iterate through dictionary keys and values\nfor k, v in my_dict.__():\n    print(k, v)',
+    choices: ['items', 'keys', 'values'],
+    answerIndex: 0,
+  },
+  {
+    id: 'cc_general_4',
+    questionText: CC_PROMPT,
+    code: '# Correctly format variable inside f-string\nmsg = __"User name is {name}"',
+    choices: ['f', 'r', 'format'],
+    answerIndex: 0,
   },
 ]
 
 /** @type {ConceptualSeed[]} */
 export const CONCEPTUAL_SEED = [
+  // --- ARRAYS / TWO SUM ---
   {
-    id: 'co_a',
+    id: 'co_arrays_1',
     questionText: 'Concept check — pick the best answer.',
-    prompt: 'What does immutability mean for a Python tuple?',
-    choices: ['Elements cannot be changed in-place', 'It cannot be iterated', 'It is always sorted'],
+    prompt: 'What is the average time complexity of checking if a key exists in a Python dict?',
+    choices: ['O(1)', 'O(log N)', 'O(N)'],
     answerIndex: 0,
   },
   {
-    id: 'co_b',
+    id: 'co_arrays_2',
     questionText: 'Concept check — pick the best answer.',
-    prompt: 'Which statement best describes a Python generator?',
+    prompt: 'Why does the Two Sum hashmap solution run faster than the brute force nested loops solution?',
     choices: [
-      'A function that yields values lazily using yield',
-      'A class that must inherit from abc.Generator',
-      'A list comprehension that runs on import',
+      'It trades O(N) auxiliary space to achieve O(N) time complexity',
+      'It sorts the numbers array first to run binary search',
+      'It removes duplicates from the array during sorting',
+    ],
+    answerIndex: 0,
+  },
+  // --- LINKED LISTS ---
+  {
+    id: 'co_linkedlist_1',
+    questionText: 'Concept check — pick the best answer.',
+    prompt: 'Unlike contiguous array lists, how are linked list nodes stored in memory?',
+    choices: [
+      'Non-contiguously, linked together by pointer memory addresses',
+      'In a single continuous static block of RAM',
+      'Inside the call stack memory registers',
     ],
     answerIndex: 0,
   },
   {
-    id: 'co_c',
+    id: 'co_linkedlist_2',
     questionText: 'Concept check — pick the best answer.',
-    prompt: 'What is the GIL most associated with?',
+    prompt: 'Why does reversing a singly linked list in-place take O(1) auxiliary memory space?',
     choices: [
-      'Thread execution of Python bytecode in CPython',
-      'Garbage collection pause times only',
-      'Async event loop fairness guarantees',
+      'It only reassigns pointer links without allocating new nodes',
+      'It copies the list elements into a dynamic array list',
+      'It deletes and reconstructs nodes from scratch',
+    ],
+    answerIndex: 0,
+  },
+  // --- CIRCULAR QUEUES ---
+  {
+    id: 'co_queue_1',
+    questionText: 'Concept check — pick the best answer.',
+    prompt: 'What is the key advantage of a Circular Queue over a standard Array List for queue operations?',
+    choices: [
+      'Avoids O(N) element shifts during dequeue by wrapping pointers in O(1)',
+      'Consumes less memory',
+      'Can store arbitrary data types',
     ],
     answerIndex: 0,
   },
   {
-    id: 'co_d',
+    id: 'co_queue_2',
     questionText: 'Concept check — pick the best answer.',
-    prompt: 'Which complexity is typical for dict key lookup average case?',
-    choices: ['O(1)', 'O(log n)', 'O(n)'],
+    prompt: 'Which processing scheduling principal defines a Queue?',
+    choices: ['First-In, First-Out (FIFO)', 'Last-In, First-Out (LIFO)', 'Key-based Priority'],
+    answerIndex: 0,
+  },
+  // --- DFS TREES ---
+  {
+    id: 'co_dfs_1',
+    questionText: 'Concept check — pick the best answer.',
+    prompt: 'In a pre-order Depth-First Search tree traversal, when is the current node visited?',
+    choices: [
+      'Before traversing either the left or right subtrees',
+      'After traversing the left but before the right subtree',
+      'After traversing both subtrees complete',
+    ],
     answerIndex: 0,
   },
   {
-    id: 'co_e',
+    id: 'co_dfs_2',
     questionText: 'Concept check — pick the best answer.',
-    prompt: 'What does `if __name__ == "__main__":` guard?',
+    prompt: 'What is the worst-case space complexity of a Depth-First Search recursion stack on a binary tree of N nodes?',
+    choices: ['O(N) for a skewed degenerate tree', 'O(log N) for balanced trees', 'O(1) always'],
+    answerIndex: 0,
+  },
+  // --- GENERAL PYTHON CORE ---
+  {
+    id: 'co_general_1',
+    questionText: 'Concept check — pick the best answer.',
+    prompt: 'What happens when you modify a mutable parameter (like a list) inside a function in Python?',
     choices: [
-      'Code that runs only when the file is executed directly',
-      'Code that runs only inside pytest',
-      'Code that runs before imports resolve',
+      'The changes affect the original object because Python passes object references',
+      'Python makes a copy of the object, so the original is unaffected',
+      'An AttributeError is immediately raised in all cases',
     ],
+    answerIndex: 0,
+  },
+  {
+    id: 'co_general_2',
+    questionText: 'Concept check — pick the best answer.',
+    prompt: 'Which of the following built-in collection types in Python is immutable?',
+    choices: ['str', 'list', 'dict'],
+    answerIndex: 0,
+  },
+  {
+    id: 'co_general_3',
+    questionText: 'Concept check — pick the best answer.',
+    prompt: 'What does the slicing expression my_list[::-1] do in Python?',
+    choices: ['Returns a reversed copy of the list', 'Returns only the last element of the list', 'Raises a SyntaxError always'],
+    answerIndex: 0,
+  },
+  {
+    id: 'co_general_4',
+    questionText: 'Concept check — pick the best answer.',
+    prompt: 'Which collection type in Python guarantees that all stored elements are unique?',
+    choices: ['set', 'list', 'tuple'],
     answerIndex: 0,
   },
 ]

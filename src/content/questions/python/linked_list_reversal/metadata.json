@@ -1,0 +1,18 @@
+{
+  "id": "linked_list_reversal",
+  "title": "Reverse a Linked List",
+  "difficulty": "easy",
+  "track": "linked_lists",
+  "estimatedMinutes": 12,
+  "stats": {
+    "attempts": 0,
+    "bestTimeSeconds": null,
+    "averageTimeSeconds": null,
+    "testsPassedBest": 0
+  },
+  "video": {
+    "firebaseStoragePath": "gs://ronin-videos/linked_list_reversal_intro.mp4",
+    "preload": true
+  },
+  "tags": ["linked-list", "pointers", "in-place"]
+}

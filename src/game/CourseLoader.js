@@ -6,8 +6,9 @@ import { sampleSessionQuestions } from './QuestionEngine.js'
  * @param {string} [courseId]
  * @param {string} [sessionKey] session id for deterministic system-puzzle rotation
  * @param {{ linkedListNodes?: number; dfsBranching?: number; dfsDepth?: number; ringBufferSize?: number }} [difficulty]
+ * @param {string} [userId]
  */
-export async function loadBossTrialSession(firebase, courseId = 'python', sessionKey = '', difficulty = {}) {
+export async function loadBossTrialSession(firebase, courseId = 'python', sessionKey = '', difficulty = {}, userId = 'guest') {
   const course = await firebase.loadCourseDocument(courseId)
   if (course.gameMode !== 'boss_trial') {
     throw new Error(`Unsupported gameMode: ${course.gameMode}`)
@@ -17,6 +18,7 @@ export async function loadBossTrialSession(firebase, courseId = 'python', sessio
   const questions = sampleSessionQuestions(bank, { 
     sessionKey: sessionKey || `anon_${Date.now()}`,
     difficulty,
+    userId,
   })
   return { course, bank, questions }
 }

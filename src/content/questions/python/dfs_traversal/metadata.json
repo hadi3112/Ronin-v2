@@ -1,0 +1,18 @@
+{
+  "id": "dfs_traversal",
+  "title": "Depth-First Search on a Tree",
+  "difficulty": "easy",
+  "track": "trees",
+  "estimatedMinutes": 12,
+  "stats": {
+    "attempts": 0,
+    "bestTimeSeconds": null,
+    "averageTimeSeconds": null,
+    "testsPassedBest": 0
+  },
+  "video": {
+    "firebaseStoragePath": "gs://ronin-videos/dfs_traversal_intro.mp4",
+    "preload": true
+  },
+  "tags": ["tree", "dfs", "recursion", "traversal"]
+}
