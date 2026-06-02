@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import LoadingContainer from '../../../features/training/LoadingContainer.jsx'
+import { useAuth } from '../../../hooks/useAuth.js'
 
 /**
  * TrainingCard — selectable language training card.
@@ -12,12 +13,24 @@ import LoadingContainer from '../../../features/training/LoadingContainer.jsx'
  *   LoadingContainer onComplete → navigate to /dashboard/training/:id
  */
 export default function TrainingCard({ id, language, icon, description, accent, delay = 0 }) {
+  const { onboardingPhase, updateOnboardingPhase } = useAuth()
+  const isHighlighted = id === 'python' && onboardingPhase === 'training_grounds_pending'
+
   const [expanded, setExpanded]     = useState(false)
   const [hoverBtn, setHoverBtn]     = useState(false)
   const [loading, setLoading]       = useState(false)
   const navigate = useNavigate()
 
+  useEffect(() => {
+    if (isHighlighted) {
+      setExpanded(true)
+    }
+  }, [isHighlighted])
+
   const handleStartTraining = () => {
+    if (isHighlighted) {
+      updateOnboardingPhase('onboarding_complete')
+    }
     setLoading(true)
   }
 
@@ -37,8 +50,21 @@ export default function TrainingCard({ id, language, icon, description, accent, 
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
+        animate={isHighlighted ? {
+          opacity: 1,
+          y: 0,
+          borderColor: ['rgba(255,255,255,0.08)', 'rgba(239,68,68,0.8)', 'rgba(255,255,255,0.08)'],
+          boxShadow: [
+            '0 4px 30px rgba(0,0,0,0.5)',
+            '0 0 20px 4px rgba(239,68,68,0.6)',
+            '0 4px 30px rgba(0,0,0,0.5)'
+          ]
+        } : { opacity: 1, y: 0 }}
+        transition={isHighlighted ? {
+          borderColor: { repeat: Infinity, duration: 2, ease: 'easeInOut' },
+          boxShadow: { repeat: Infinity, duration: 2, ease: 'easeInOut' },
+          default: { duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }
+        } : { duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
         className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-black/50 shadow-ronin"
       >
         {/* Ambient accent glow */}
@@ -72,7 +98,7 @@ export default function TrainingCard({ id, language, icon, description, accent, 
 
           <div className="flex-1">
             <h3 className="font-display text-base font-semibold text-ronin-cream md:text-lg">
-              {language} Training
+              {id === 'python' ? 'Python Basics and Data Structures' : `${language} Training`}
             </h3>
             <p className="mt-0.5 text-[12px] text-ronin-muted">{description}</p>
           </div>

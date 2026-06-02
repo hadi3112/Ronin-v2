@@ -107,10 +107,10 @@ export default function HeroSection({ onNavigateToTutorial }) {
               <button
                 onClick={handleOpenScoreboard}
                 className="flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[10px] font-semibold text-purple-400 transition-colors hover:bg-purple-500/20"
-                title="View performance scoreboard"
+                title="Check Your Stats"
               >
                 <BarChart3 className="h-3.5 w-3.5" />
-                Scoreboard
+                Check Your Stats
               </button>
             </div>
           </div>

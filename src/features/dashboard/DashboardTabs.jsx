@@ -10,7 +10,7 @@ const tabs = [
   { id: 'training', label: 'Training Grounds' },
 ]
 
-export default function DashboardTabs({ activeTab, onTabChange }) {
+export default function DashboardTabs({ activeTab, onTabChange, onTrainingGroundsClick, trainingTabRef }) {
   const [tab, setTab] = useState(activeTab || 'explore')
 
   useEffect(() => {
@@ -22,6 +22,7 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
   const handleTabChange = (newTab) => {
     setTab(newTab)
     if (onTabChange) onTabChange(newTab)
+    if (newTab === 'training' && onTrainingGroundsClick) onTrainingGroundsClick()
   }
 
   return (
@@ -32,6 +33,7 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
           return (
             <button
               key={t.id}
+              ref={t.id === 'training' ? trainingTabRef : undefined}
               type="button"
               onClick={() => handleTabChange(t.id)}
               className={[

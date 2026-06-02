@@ -3,6 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, TrendingUp, TrendingDown, Minus, BookOpen, Target, Zap, Trophy, ChevronDown, Settings2, Clock } from 'lucide-react'
 import { useAntigravity } from '../../context/AntigravityContext.jsx'
 import { CATEGORY_DISPLAY_NAMES } from '../../game/antigravity/AntigravityAgent.js'
+import { useAuth } from '../../hooks/useAuth.js'
+import {
+  readTrainingGroundsResults,
+  readSkillVector,
+} from '../../services/trainingGroundsService.js'
 
 function formatTimestamp(ts) {
   const d = new Date(ts)
@@ -185,9 +190,23 @@ function ReasoningEntry({ entry }) {
 
 export default function ScoreboardDialog({ open, onClose, onNavigateToTutorial }) {
   const { getProfileSnapshot, getFormattedReasoning } = useAntigravity()
+  const { user } = useAuth()
+  const userId = user?.uid ?? 'guest'
+
+  const [activeTab, setActiveTab] = useState('challenges') // 'challenges' | 'training_grounds'
   
   const profile = getProfileSnapshot()
   const reasoning = getFormattedReasoning(8)
+
+  const tgResults = readTrainingGroundsResults(userId)
+  const skillVector = readSkillVector(userId)
+
+  const TG_PROBLEM_INFO = [
+    { id: 'two_sum', name: 'Two Sum Array Logic', domain: 'arrays', icon: '🔢' },
+    { id: 'linked_list_reversal', name: 'Reverse a Linked List', domain: 'linked_lists', icon: '🔗' },
+    { id: 'dfs_traversal', name: 'Depth-First Search on a Tree', domain: 'trees', icon: '🌳' },
+    { id: 'circular_queue', name: 'Build a Circular Queue', domain: 'queues', icon: '🔄' },
+  ]
 
   const handleViewTutorial = (categoryName) => {
     onClose()
@@ -236,84 +255,232 @@ export default function ScoreboardDialog({ open, onClose, onNavigateToTutorial }
               </div>
             </div>
 
-            <div className="max-h-[calc(90vh-100px)] overflow-y-auto p-6">
-              {profile.weakAreas.length > 0 && (
-                <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
-                  <div className="flex items-center gap-2 text-red-400">
-                    <Target className="h-4 w-4" />
-                    <span className="text-sm font-semibold">Areas to Improve</span>
-                  </div>
-                  <p className="mt-1 text-xs text-ronin-muted">
-                    Focus on: {profile.weakAreas.map(c => CATEGORY_DISPLAY_NAMES[c]).join(', ')}
-                  </p>
-                </div>
-              )}
+            {/* ── Tabs toggle ── */}
+            <div className="flex border-b border-white/10 bg-black/40 px-6 py-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab('challenges')}
+                className={`pb-2 pt-1 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 ${
+                  activeTab === 'challenges'
+                    ? 'border-ronin-crimson text-ronin-cream'
+                    : 'border-transparent text-ronin-muted hover:text-ronin-cream'
+                }`}
+              >
+                Adaptive Challenges
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('training_grounds')}
+                className={`pb-2 pt-1 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 ${
+                  activeTab === 'training_grounds'
+                    ? 'border-ronin-crimson text-ronin-cream'
+                    : 'border-transparent text-ronin-muted hover:text-ronin-cream'
+                }`}
+              >
+                Training Grounds
+              </button>
+            </div>
 
-              {profile.strongAreas.length > 0 && (
-                <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-                  <div className="flex items-center gap-2 text-emerald-400">
-                    <TrendingUp className="h-4 w-4" />
-                    <span className="text-sm font-semibold">Your Strengths</span>
-                  </div>
-                  <p className="mt-1 text-xs text-ronin-muted">
-                    Mastered: {profile.strongAreas.map(c => CATEGORY_DISPLAY_NAMES[c]).join(', ')}
-                  </p>
-                </div>
-              )}
+            <div className="max-h-[calc(90vh-140px)] overflow-y-auto p-6">
+              {activeTab === 'challenges' ? (
+                <>
+                  {profile.weakAreas.length > 0 && (
+                    <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+                      <div className="flex items-center gap-2 text-red-400">
+                        <Target className="h-4 w-4" />
+                        <span className="text-sm font-semibold">Areas to Improve</span>
+                      </div>
+                      <p className="mt-1 text-xs text-ronin-muted">
+                        Focus on: {profile.weakAreas.map(c => CATEGORY_DISPLAY_NAMES[c]).join(', ')}
+                      </p>
+                    </div>
+                  )}
 
-              <div className="mb-6">
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ronin-muted">
-                  Category Breakdown
-                </h3>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {Object.entries(profile.categoryStats).map(([cat, stats]) => (
-                    <CategoryCard
-                      key={cat}
-                      name={CATEGORY_DISPLAY_NAMES[cat] || cat}
-                      stats={stats}
-                      onViewTutorial={handleViewTutorial}
-                    />
-                  ))}
-                </div>
-              </div>
+                  {profile.strongAreas.length > 0 && (
+                    <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+                      <div className="flex items-center gap-2 text-emerald-400">
+                        <TrendingUp className="h-4 w-4" />
+                        <span className="text-sm font-semibold">Your Strengths</span>
+                      </div>
+                      <p className="mt-1 text-xs text-ronin-muted">
+                        Mastered: {profile.strongAreas.map(c => CATEGORY_DISPLAY_NAMES[c]).join(', ')}
+                      </p>
+                    </div>
+                  )}
 
-              <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
-                  <div className="font-display text-xl font-bold text-ronin-gold">{profile.maxGlobalStreak}</div>
-                  <div className="text-[10px] text-ronin-muted">Best Streak</div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
-                  <div className="font-display text-xl font-bold text-emerald-400">
-                    {Object.values(profile.categoryStats).reduce((s, c) => s + c.correct, 0)}
+                  <div className="mb-6">
+                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ronin-muted">
+                      Category Breakdown
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {Object.entries(profile.categoryStats).map(([cat, stats]) => (
+                        <CategoryCard
+                          key={cat}
+                          name={CATEGORY_DISPLAY_NAMES[cat] || cat}
+                          stats={stats}
+                          onViewTutorial={handleViewTutorial}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="text-[10px] text-ronin-muted">Total Correct</div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
-                  <div className="font-display text-xl font-bold text-amber-400">
-                    {Math.round(
-                      (Object.values(profile.categoryStats).reduce((s, c) => s + c.correct, 0) /
-                        Math.max(1, Object.values(profile.categoryStats).reduce((s, c) => s + c.attempts, 0))) * 100
-                    )}%
-                  </div>
-                  <div className="text-[10px] text-ronin-muted">Overall Acc.</div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
-                  <div className="font-display text-xl font-bold text-purple-400">{profile.sessionCount}</div>
-                  <div className="text-[10px] text-ronin-muted">Sessions</div>
-                </div>
-              </div>
 
-              {reasoning.length > 0 && (
-                <div>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ronin-muted">
-                    Agent Reasoning Log
-                  </h3>
-                  <div className="space-y-2">
-                    {reasoning.map(entry => (
-                      <ReasoningEntry key={entry.id} entry={entry} />
-                    ))}
+                  <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
+                      <div className="font-display text-xl font-bold text-ronin-gold">{profile.maxGlobalStreak}</div>
+                      <div className="text-[10px] text-ronin-muted">Best Streak</div>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
+                      <div className="font-display text-xl font-bold text-emerald-400">
+                        {Object.values(profile.categoryStats).reduce((s, c) => s + c.correct, 0)}
+                      </div>
+                      <div className="text-[10px] text-ronin-muted">Total Correct</div>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
+                      <div className="font-display text-xl font-bold text-amber-400">
+                        {Math.round(
+                          (Object.values(profile.categoryStats).reduce((s, c) => s + c.correct, 0) /
+                            Math.max(1, Object.values(profile.categoryStats).reduce((s, c) => s + c.attempts, 0))) * 100
+                        )}%
+                      </div>
+                      <div className="text-[10px] text-ronin-muted">Overall Acc.</div>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
+                      <div className="font-display text-xl font-bold text-purple-400">{profile.sessionCount}</div>
+                      <div className="text-[10px] text-ronin-muted">Sessions</div>
+                    </div>
                   </div>
-                </div>
+
+                  {reasoning.length > 0 && (
+                    <div>
+                      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ronin-muted">
+                        Agent Reasoning Log
+                      </h3>
+                      <div className="space-y-2">
+                        {reasoning.map(entry => (
+                          <ReasoningEntry key={entry.id} entry={entry} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Training Grounds skill vector */}
+                  <div className="mb-6">
+                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ronin-muted">
+                      Training Grounds Skill Vector
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {Object.entries(skillVector).map(([domain, val]) => {
+                        const label = domain === 'arrays' ? 'Array Logic' : domain === 'linked_lists' ? 'Linked Lists' : domain === 'trees' ? 'DFS Trees' : 'Circular Queues'
+                        const pct = Math.round(val * 100)
+                        return (
+                          <div key={domain} className="rounded-xl border border-white/10 bg-black/30 p-4">
+                            <div className="flex justify-between text-xs font-semibold text-ronin-cream mb-2">
+                              <span>{label}</span>
+                              <span className="text-ronin-gold">{pct}%</span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-black/40">
+                              <motion.div
+                                className="h-full rounded-full bg-gradient-to-r from-ronin-crimson to-ronin-gold"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${pct}%` }}
+                                transition={{ duration: 0.6 }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Telemetry and progress check */}
+                  <div className="mb-6">
+                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ronin-muted">
+                      Telemetry & Progress
+                    </h3>
+                    <div className="space-y-3">
+                      {TG_PROBLEM_INFO.map((prob) => {
+                        const stats = tgResults[prob.id]
+                        const completed = stats?.status === 'pass'
+
+                        if (!completed) {
+                          return (
+                            <div
+                              key={prob.id}
+                              className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-4 text-left opacity-60"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-xl">🔒</span>
+                                <div>
+                                  <h4 className="font-display text-sm font-semibold text-ronin-muted">
+                                    {prob.name}
+                                  </h4>
+                                  <span className="text-[10px] uppercase tracking-wider text-ronin-muted/50">
+                                    Locked / Not Attempted
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        const minutes = Math.floor(stats.timeTakenSeconds / 60)
+                        const seconds = stats.timeTakenSeconds % 60
+                        const durationText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
+
+                        return (
+                          <div
+                            key={prob.id}
+                            className="rounded-xl border border-ronin-crimson/30 bg-ronin-crimson/5 p-4 text-left transition-all hover:bg-ronin-crimson/10"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-white/5 pb-2 mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">{prob.icon}</span>
+                                <div>
+                                  <h4 className="font-display text-sm font-semibold text-ronin-cream">
+                                    {prob.name}
+                                  </h4>
+                                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-emerald-400">
+                                    Cleared
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-[10px] text-ronin-muted">
+                                Cleared: {new Date(stats.timestamp).toLocaleDateString()}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
+                              <div className="rounded-lg bg-black/45 p-2">
+                                <div className="text-ronin-muted text-[10px]">Interface Mode</div>
+                                <div className="font-bold text-ronin-cream capitalize">
+                                  {stats.modeChosen === 'ide' ? '⌨️ Monaco IDE' : '🧩 Phaser Blocks'}
+                                </div>
+                              </div>
+                              <div className="rounded-lg bg-black/45 p-2">
+                                <div className="text-ronin-muted text-[10px]">Attempts & Moves</div>
+                                <div className="font-bold text-ronin-cream">
+                                  {stats.runAttempts} Runs {stats.modeChosen === 'blocks' ? `· ${stats.blockMovesMade} Moves` : ''}
+                                </div>
+                              </div>
+                              <div className="rounded-lg bg-black/45 p-2">
+                                <div className="text-ronin-muted text-[10px]">Hints & AI Support</div>
+                                <div className="font-bold text-ronin-cream">
+                                  {stats.hintsOpened} Mild / {stats.geminiHintsReceived} Gemini
+                                </div>
+                              </div>
+                              <div className="rounded-lg bg-black/45 p-2">
+                                <div className="text-ronin-muted text-[10px]">Time Spent</div>
+                                <div className="font-bold text-ronin-cream">{durationText}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </motion.div>
