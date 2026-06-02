@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { MessageCircle, X } from 'lucide-react'
 import mascot from '../../assets/mascot.png'
+import { useAuth } from '../../hooks/useAuth.js'
 
 const STORAGE_KEY = 'ronin.session.v1'
 
@@ -44,6 +45,9 @@ const STATIC_QA = [
 ]
 
 export default function MascotChatWidget() {
+  const { onboardingPhase } = useAuth()
+  const showBubble = onboardingPhase === 'training_grounds_pending'
+
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState(() => [
     { role: 'bot', text: 'Tap a quick question or type a note — I only know scripted answers for now.' },
@@ -134,6 +138,38 @@ export default function MascotChatWidget() {
                 ))}
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showBubble && !open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, x: 20 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, x: 20 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300, delay: 0.5 }}
+            className="relative mr-3 w-[320px] rounded-2xl border border-ronin-crimson/50 bg-[#0a0506] pl-4 pr-12 py-3 text-xs text-ronin-cream shadow-ronin-red"
+            style={{
+              position: 'absolute',
+              right: '100%',
+              bottom: '12px',
+              whiteSpace: 'normal',
+            }}
+          >
+            {/* Triangular arrow of bubble */}
+            <div
+              className="absolute h-3 w-3 rotate-45 border-r border-t border-ronin-crimson/50 bg-[#0a0506]"
+              style={{
+                right: '-6px',
+                bottom: '14px',
+              }}
+            />
+            <p className="font-semibold text-ronin-gold mb-1">Mascot Guide</p>
+            <p className="leading-relaxed">
+              Let&apos;s get to work! Click on the highlighted <span className="text-blue-400 font-semibold">Python: Basics and Data Structures</span> course card above to start your training.
+            </p>
+            <img src={mascot} alt="" className="absolute right-2.5 bottom-2 h-9 w-7 object-contain" />
           </motion.div>
         )}
       </AnimatePresence>
