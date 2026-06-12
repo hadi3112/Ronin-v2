@@ -10,12 +10,14 @@ import BossTrialGamePage from './pages/BossTrialGamePage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import GettingStartedPage from './pages/GettingStartedPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import LandingPage from './pages/LandingPage.jsx'
 import PreferencesPage from './pages/PreferencesPage.jsx'
 import IDETrainingPage from './pages/IDETrainingPage.jsx'
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
 
       <Route
@@ -57,8 +59,7 @@ export default function App() {
         <Route path="training/:language" element={<IDETrainingPage />} />
       </Route>
 
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
