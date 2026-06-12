@@ -14,7 +14,8 @@ console.log('🚀 Starting Ronin Asset Bridging for Expo...');
 
 try {
   // 1. Build the Vite Web project
-  console.log('📦 Compiling Vite production assets (npm run build)...');
+  console.log('📦 Compiling Vite production assets for Expo (BUILD_TARGET=expo)...');
+  process.env.BUILD_TARGET = 'expo';
   execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
 
   // 2. Ensure target Expo directories exist
