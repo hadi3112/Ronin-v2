@@ -17,7 +17,7 @@ export default function TextField({
         onChange={onChange}
         autoComplete={autoComplete}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-ronin-cream outline-none transition focus:border-ronin-crimson/60 focus:ring-2 focus:ring-ronin-crimson/25 placeholder:text-ronin-muted/50"
+        className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-ronin-cream outline-none transition-all duration-300 focus:border-ronin-crimson/80 focus:ring-1 focus:ring-ronin-crimson/50 focus:shadow-[0_0_20px_rgba(232,37,58,0.5)] placeholder:text-ronin-muted/50"
       />
     </label>
   )
