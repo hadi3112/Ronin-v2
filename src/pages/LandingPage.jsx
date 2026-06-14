@@ -127,7 +127,7 @@ export default function LandingPage() {
 
   const handleStartForFree = (e) => {
     e.preventDefault()
-    navigate('/login', { state: { prefilledEmail: email } })
+    navigate('/login', { state: { mode: 'login', prefilledEmail: email } })
   }
 
   // Animation variants
@@ -155,7 +155,7 @@ export default function LandingPage() {
 
         <div className="flex items-center">
           <button 
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login', { state: { mode: 'login' } })}
             className="rounded bg-[#E8253A] px-5 py-2 text-sm font-bold uppercase tracking-wide text-white transition-all hover:bg-red-600 hover:shadow-[0_0_15px_rgba(232,37,58,0.4)]"
           >
             Sign Up Free
@@ -594,7 +594,7 @@ export default function LandingPage() {
             </p>
 
             <button 
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { state: { mode: 'login' } })}
               className="rounded bg-[#E8253A] px-10 py-5 font-bold uppercase tracking-widest text-lg text-white transition-all hover:bg-red-600 hover:shadow-[0_0_25px_rgba(232,37,58,0.5)]"
             >
               Start Playing
