@@ -1,0 +1,16 @@
+{
+  "name": "ronin-migration",
+  "version": "1.0.0",
+  "description": "One-time Firebase migration scripts for Ronin platform content",
+  "main": "migrate.js",
+  "scripts": {
+    "migrate": "node migrate.js",
+    "migrate:foundations": "node migrate.js foundations"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
