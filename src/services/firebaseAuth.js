@@ -1,71 +1,94 @@
-/**
- * Firebase auth — PLACEHOLDER / STUB
- * ---------------------------------------------------------------------------
- * Replace this module with real Firebase once your project is provisioned:
- *
- * 1) npm install firebase
- * 2) Create src/services/firebaseApp.js:
- *      import { initializeApp } from 'firebase/app'
- *      const firebaseConfig = { apiKey, authDomain, projectId, ... }
- *      export const app = initializeApp(firebaseConfig)
- * 3) import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously }
- *    from 'firebase/auth'
- * 4) Export functions that wrap those APIs and throw on real errors.
- *
- * Never commit real API keys — use Vite env: import.meta.env.VITE_FIREBASE_*
- *
- * Example (real Firebase):
- *   const user = firebase.auth().currentUser
- *   const userId = user?.uid || 'guest'
- */
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  sendPasswordResetEmail, 
+  sendEmailVerification, 
+  verifyBeforeUpdateEmail,
+  signOut, 
+  onAuthStateChanged,
+  signInAnonymously
+} from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { app, db } from './firebase/firebaseConfig.js';
+
+export const auth = getAuth(app);
 
 /**
- * @param {string} email
- * @param {string} password
- * @returns {Promise<{ uid: string; email: string; displayName: string }>}
+ * Sign in existing user
  */
-export async function signInWithEmailPasswordStub(email, password) {
-  void password
-  await new Promise((r) => setTimeout(r, 380))
-  const safeEmail = email?.trim() || 'ronin@demo.local'
-  return {
-    uid: 'demo-uid',
-    email: safeEmail,
-    displayName: safeEmail.split('@')[0] || 'Ronin',
-  }
+export async function signInWithEmailPassword(email, password) {
+  console.log(`🔥 Firebase Auth: Attempting login for [${email}]...`);
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  console.log(`✅ Firebase Auth: Login successful! UID:`, userCredential.user.uid);
+  return userCredential.user;
 }
 
 /**
- * @returns {Promise<void>}
+ * Register new user, create their Firestore document, and send verification email
  */
-export async function signOutStub() {
-  await new Promise((r) => setTimeout(r, 120))
+export async function registerWithEmailPassword(email, password) {
+  console.log(`🔥 Firebase Auth: Attempting signup for [${email}]...`);
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
+  console.log(`✅ Firebase Auth: Signup successful! Auth UID created:`, user.uid);
+  
+  // Create the Firestore document in the 'users' collection
+  console.log(`🔥 Firebase Request: Creating users document for [${user.uid}]...`);
+  await setDoc(doc(db, 'users', user.uid), {
+    email: user.email,
+    createdAt: serverTimestamp(),
+    onboardingPhase: 'diagnostic_pending', // Assume they need to take the diagnostic right after signup
+    preferences: null
+  });
+  console.log(`✅ Firebase Response: Successfully created users/${user.uid} document!`);
+
+  return user;
 }
 
 /**
- * Placeholder anonymous auth — real: signInAnonymously(getAuth(app))
- * @returns {Promise<{ uid: string; isAnonymous: boolean }>}
+ * Send email verification
  */
-export async function signInAnonymouslyPlaceholder() {
-  await new Promise((r) => setTimeout(r, 160))
-  return { uid: `anon_${Math.random().toString(16).slice(2, 10)}`, isAnonymous: true }
+export async function sendVerificationEmail(user) {
+  await sendEmailVerification(user);
 }
 
 /**
- * Mirrors: firebase.auth().currentUser?.uid ?? 'guest'
- * Wire to getAuth(app).currentUser when Firebase is installed.
- * @returns {string}
+ * Send password reset email
  */
-export function getCurrentUserIdPlaceholder() {
-  return 'guest'
+export async function sendPasswordReset(email) {
+  await sendPasswordResetEmail(auth, email);
 }
 
 /**
- * Subscribe to auth state — STUB returns unsubscribe noop.
- * Real: onAuthStateChanged(getAuth(app), callback)
- * @param {(user: { uid: string; email: string; displayName: string } | null) => void} [_callback]
- * @returns {() => void}
+ * Request an email change (sends verification to new email before updating)
  */
-export function onAuthStateChangedStub() {
-  return () => {}
+export async function requestEmailChange(user, newEmail) {
+  await verifyBeforeUpdateEmail(user, newEmail);
+}
+
+/**
+ * Sign out current user
+ */
+export async function logOut() {
+  await signOut(auth);
+}
+
+/**
+ * Subscribe to auth state changes
+ */
+export function onAuthStateChange(callback) {
+  return onAuthStateChanged(auth, callback);
+}
+
+/**
+ * Anonymous sign in (placeholder logic matching previous stubs)
+ */
+export async function signInAnonymouslyStub() {
+  const userCredential = await signInAnonymously(auth);
+  return userCredential.user;
+}
+
+export function getCurrentUserId() {
+  return auth.currentUser?.uid ?? 'guest';
 }
