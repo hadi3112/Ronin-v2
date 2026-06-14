@@ -50,14 +50,42 @@ export function useAdaptiveBossTrialGame(ids) {
     let cancelled = false
     ;(async () => {
       try {
-        const difficulty = getDifficultyParams()
-        const { questions: q, bank } = await loadBossTrialSession(
-          defaultFirebaseService,
-          'python',
-          ids.sessionId,
-          difficulty,
-          ids.userId
-        )
+        let q
+        let bank = null
+
+        if (ids.isDiagnostic && ids.diagnosticType === 'foundations') {
+          const { fetchDiagnostic } = await import('../../../services/firebase/firestoreService.js')
+          const diagDoc = await fetchDiagnostic('foundations_diagnostic')
+          if (!diagDoc) {
+            throw new Error('Foundations diagnostic document not found in Firestore')
+          }
+          q = diagDoc.questions.map((question) => ({
+            id: question.questionId,
+            bankType: 'conceptual',
+            moduleId: question.moduleId,
+            subtype: question.domain,
+            difficulty: question.difficulty || 1,
+            payload: {
+              questionText: question.questionText,
+              prompt: '',
+              choices: question.options.map((opt) => opt.text),
+              answerIndex: question.options.findIndex((opt) => opt.id === question.correctOptionId),
+              explanation: question.explanation,
+            },
+          }))
+        } else {
+          const difficulty = getDifficultyParams()
+          const sessionResult = await loadBossTrialSession(
+            defaultFirebaseService,
+            'python',
+            ids.sessionId,
+            difficulty,
+            ids.userId
+          )
+          q = sessionResult.questions
+          bank = sessionResult.bank
+        }
+
         if (cancelled) return
 
         startSession()
@@ -84,7 +112,7 @@ export function useAdaptiveBossTrialGame(ids) {
       cancelled = true
       abortRef.current?.abort()
     }
-  }, [ids.sessionId, startSession, getDifficultyParams])
+  }, [ids.sessionId, ids.userId, ids.isDiagnostic, ids.diagnosticType, startSession, getDifficultyParams])
 
   useEffect(() => {
     answerStartTimeRef.current = performance.now()
