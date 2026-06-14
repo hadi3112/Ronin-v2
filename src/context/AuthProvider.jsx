@@ -1,7 +1,10 @@
 import { useCallback, useMemo, useState, useEffect } from 'react'
 import {
-  signInWithEmailPasswordStub,
-  signOutStub,
+  signInWithEmailPassword,
+  registerWithEmailPassword,
+  sendPasswordReset,
+  sendVerificationEmail,
+  logOut,
 } from '../services/firebaseAuth.js'
 import { AuthContext } from './auth-context-core.js'
 import {
@@ -67,10 +70,8 @@ export default function AuthProvider({ children }) {
 
   const login = useCallback(
     async (email, password) => {
-      // Swap for Firebase: signInWithEmailAndPassword from 'firebase/auth'
-      const u = await signInWithEmailPasswordStub(email, password)
-      // Demo hero name matches dashboard mockup; with Firebase use user.displayName or profile doc.
-      const nextUser = { ...u, displayName: 'Hadi' }
+      const u = await signInWithEmailPassword(email, password)
+      const nextUser = { uid: u.uid, email: u.email, displayName: u.displayName || u.email.split('@')[0] }
       setUser(nextUser)
       setGettingStartedDone(false)
       setPreferences(null)
@@ -79,7 +80,6 @@ export default function AuthProvider({ children }) {
         gettingStartedDone: false,
         preferences: null,
       })
-      // Load onboarding phase for the newly logged-in user
       getOnboardingPhase(nextUser.uid).then((phase) => {
         setOnboardingPhaseState(phase)
       })
@@ -87,8 +87,37 @@ export default function AuthProvider({ children }) {
     [persist],
   )
 
+  const signup = useCallback(
+    async (email, password) => {
+      const u = await registerWithEmailPassword(email, password)
+      await sendVerificationEmail(u)
+      
+      const nextUser = { uid: u.uid, email: u.email, displayName: u.email.split('@')[0] }
+      setUser(nextUser)
+      setGettingStartedDone(false)
+      setPreferences(null)
+      persist({
+        user: nextUser,
+        gettingStartedDone: false,
+        preferences: null,
+      })
+      getOnboardingPhase(nextUser.uid).then((phase) => {
+        setOnboardingPhaseState(phase)
+      })
+      return u
+    },
+    [persist],
+  )
+
+  const resetPassword = useCallback(
+    async (email) => {
+      await sendPasswordReset(email)
+    },
+    [],
+  )
+
   const logout = useCallback(async () => {
-    await signOutStub()
+    await logOut()
     setUser(null)
     setGettingStartedDone(false)
     setPreferences(null)
@@ -113,8 +142,6 @@ export default function AuthProvider({ children }) {
         gettingStartedDone: true,
         preferences: prefs,
       })
-      // First time a user saves preferences → begin diagnostic onboarding
-      // FIREBASE_PLACEHOLDER: this also calls setOnboardingPhase which writes to users/{userId}.onboardingPhase
       if (!onboardingPhase && user) {
         const uid = user.uid
         persistOnboardingPhase(uid, 'diagnostic_pending').then(() => {
@@ -125,12 +152,6 @@ export default function AuthProvider({ children }) {
     [persist, user, onboardingPhase],
   )
 
-  /**
-   * Update the onboarding phase both in storage and local state.
-   * Call this to advance through: diagnostic_pending → training_grounds_pending → onboarding_complete
-   * FIREBASE_PLACEHOLDER: replace persistOnboardingPhase internals with real Firestore setDoc call.
-   * @param {import('../services/onboardingService.js').OnboardingPhase} phase
-   */
   const updateOnboardingPhase = useCallback(
     async (phase) => {
       if (!user) return
@@ -150,6 +171,8 @@ export default function AuthProvider({ children }) {
       onboardingPhase,
       updateOnboardingPhase,
       login,
+      signup,
+      resetPassword,
       logout,
       completeGettingStarted,
       savePreferences,
@@ -161,6 +184,8 @@ export default function AuthProvider({ children }) {
       onboardingPhase,
       updateOnboardingPhase,
       login,
+      signup,
+      resetPassword,
       logout,
       completeGettingStarted,
       savePreferences,
