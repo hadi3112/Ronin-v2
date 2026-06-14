@@ -8,7 +8,7 @@
  *   const user = firebase.auth().currentUser
  *   const userId = user?.uid || 'guest'
  */
-import { getCurrentUserIdPlaceholder } from './firebaseAuth.js'
+import { getCurrentUserId } from './firebaseAuth.js'
 
 const PYTHON_COURSE = {
   name: 'Python',
@@ -34,13 +34,13 @@ export function createFirebaseService(opts = {}) {
      * Placeholder: real app should call initializeApp + getAuth + signInAnonymously as needed.
      */
     initAuthPlaceholder() {
-      void getCurrentUserIdPlaceholder()
+      void getCurrentUserId()
       return Promise.resolve()
     },
 
     getSessionIdentityPlaceholder() {
       return {
-        userId: getCurrentUserIdPlaceholder(),
+        userId: getCurrentUserId(),
         /** Swap for: firebase.auth().currentUser */
         firebaseUserSummary: 'stub-auth',
       }
