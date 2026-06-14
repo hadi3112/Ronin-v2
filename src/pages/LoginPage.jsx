@@ -6,6 +6,9 @@ import NeonButton from '../components/ui/NeonButton.jsx'
 import TextField from '../components/ui/TextField.jsx'
 import RoninMark from '../components/branding/RoninMark.jsx'
 import { useAuth } from '../hooks/useAuth.js'
+import Snackbar from '../components/ui/Snackbar.jsx'
+import VerificationDialog from '../components/auth/VerificationDialog.jsx'
+import ErrorDialog from '../components/auth/ErrorDialog.jsx'
 
 import loginMascot from '../assets/login_mascot.png'
 import laptopMockup from '../assets/laptop_mockup.png'
@@ -30,11 +33,20 @@ const TypewriterText = ({ text }) => {
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, gettingStartedDone, preferences, login } = useAuth()
+  const { user, gettingStartedDone, preferences, login, signup, resetPassword } = useAuth()
   
+  const [authMode, setAuthMode] = useState(location.state?.mode || 'login') // 'login' | 'signup' | 'reset'
   const [email, setEmail] = useState(location.state?.prefilledEmail || '')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  
+  const [showSnackbar, setShowSnackbar] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
+  
+  const [showVerification, setShowVerification] = useState(false)
+  
+  const [showError, setShowError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const [isNativeApp, setIsNativeApp] = useState(false)
 
@@ -44,27 +56,94 @@ export default function LoginPage() {
     }
   }, [])
 
+  // Update mode if navigation state changes
   useEffect(() => {
-    if (!user) return
+    if (location.state?.mode) {
+      setAuthMode(location.state.mode)
+    }
+  }, [location.state])
+
+  useEffect(() => {
+    // Only redirect automatically if we're in login mode and authenticated
+    // For signup, we want to hold them here to show the verification dialog
+    if (!user || authMode === 'signup') return
     if (preferences) navigate('/dashboard', { replace: true })
     else if (gettingStartedDone) navigate('/preferences', { replace: true })
     else navigate('/getting-started', { replace: true })
-  }, [user, gettingStartedDone, preferences, navigate])
+  }, [user, gettingStartedDone, preferences, navigate, authMode])
+
+  function getErrorMessage(err) {
+    if (err.code === 'auth/configuration-not-found') return "Firebase configuration is missing or incomplete. Did you forget to set up your .env file?"
+    if (err.code === 'auth/invalid-email') return "The email address is invalid."
+    if (err.code === 'auth/email-already-in-use') return "An account with this email already exists."
+    if (err.code === 'auth/weak-password') return "Your password is too weak. Please use at least 6 characters."
+    if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') return "Invalid email or password."
+    return err.message || "An unexpected error occurred."
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setIsLoading(true)
+    setShowError(false)
+    
     try {
-      await login(email, password)
-      navigate('/getting-started', { replace: true })
+      if (authMode === 'login') {
+        await login(email, password)
+        navigate('/getting-started', { replace: true })
+      } 
+      else if (authMode === 'signup') {
+        await signup(email, password)
+        // Show success states
+        setSnackbarMessage('Sign up was successful')
+        setShowSnackbar(true)
+        setShowVerification(true)
+      } 
+      else if (authMode === 'reset') {
+        await resetPassword(email)
+        setSnackbarMessage('Reset link sent if account exists')
+        setShowSnackbar(true)
+        setAuthMode('login') // Flip back to login
+      }
     } catch (error) {
       console.error(error)
-      setTimeout(() => setIsLoading(false), 500)
+      setErrorMessage(getErrorMessage(error))
+      setShowError(true)
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  const animationVariants = {
+    initial: { opacity: 0, x: -20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 20 }
   }
 
   return (
     <div className={`flex h-screen w-full text-white overflow-hidden relative ${isNativeApp ? 'bg-[#2a0810] bg-[radial-gradient(ellipse_at_center,rgba(60,10,20,1)_0%,rgba(20,5,10,1)_100%)]' : 'bg-[#050304]'}`}>
+      
+      <Snackbar 
+        isVisible={showSnackbar} 
+        message={snackbarMessage} 
+        onClose={() => setShowSnackbar(false)} 
+      />
+
+      <ErrorDialog
+        isVisible={showError}
+        title="Authentication Failed"
+        message={errorMessage}
+        onClose={() => setShowError(false)}
+      />
+
+      <VerificationDialog 
+        isVisible={showVerification} 
+        email={email} 
+        onClose={() => {
+          setShowVerification(false)
+          navigate('/getting-started', { replace: true })
+        }} 
+      />
+
       {/* Left Panel (Form) */}
       <div className={`flex h-full flex-col justify-center items-center px-8 sm:px-16 lg:px-24 relative z-10 ${isNativeApp ? 'w-full' : 'w-full md:w-[40%]'}`}>
         
@@ -84,19 +163,27 @@ export default function LoginPage() {
                   className="flex flex-col items-center justify-center py-12 absolute inset-0"
                 >
                   <Loader2 className="h-12 w-12 animate-spin text-ronin-crimson mb-6" />
-                  <p className="text-sm font-semibold tracking-widest text-ronin-muted uppercase font-display">Authenticating...</p>
+                  <p className="text-sm font-semibold tracking-widest text-ronin-muted uppercase font-display">
+                    {authMode === 'login' ? 'Authenticating...' : authMode === 'signup' ? 'Creating Account...' : 'Sending Link...'}
+                  </p>
                 </motion.div>
               ) : (
                 <motion.form
-                  key="form"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
+                  key={`form-${authMode}`}
+                  variants={animationVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
                   className="space-y-6 w-full"
                   onSubmit={handleSubmit}
-                  noValidate // Prevent browser HTML5 validation (like @ missing)
+                  noValidate
                 >
-                  {/* Changed type to "text" to completely disable email validation for now */}
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-display uppercase tracking-widest">
+                      {authMode === 'login' ? 'Welcome Back' : authMode === 'signup' ? 'Join Ronin' : 'Reset Password'}
+                    </h2>
+                  </div>
+
                   <TextField
                     id="email"
                     label="Email"
@@ -107,28 +194,60 @@ export default function LoginPage() {
                     placeholder="hadi@ronin.dev"
                   />
                   
-                  <div className="space-y-2">
-                    <TextField
-                      id="password"
-                      label="Password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                    />
-                    <div className="flex justify-end">
-                      <a href="#" className="text-[11px] text-ronin-crimson hover:text-red-400 hover:underline tracking-wide transition-colors">Forgot your password?</a>
+                  {authMode !== 'reset' && (
+                    <div className="space-y-2">
+                      <TextField
+                        id="password"
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete={authMode === 'login' ? "current-password" : "new-password"}
+                        placeholder="••••••••"
+                      />
+                      {authMode === 'login' && (
+                        <div className="flex justify-end">
+                          <button 
+                            type="button" 
+                            onClick={() => setAuthMode('reset')}
+                            className="text-[11px] text-ronin-crimson hover:text-red-400 hover:underline tracking-wide transition-colors"
+                          >
+                            Forgot your password?
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
 
-                  <NeonButton type="submit" className="w-full py-3.5 mt-4 text-base tracking-wide">
-                    Sign in
-                  </NeonButton>
+                  <div className="pt-4 space-y-3">
+                    <NeonButton type="submit" className="w-full py-3.5 text-sm tracking-widest font-display uppercase hover:shadow-[0_0_25px_rgba(232,37,58,0.6)] transition-all">
+                      {authMode === 'login' ? 'Log in' : authMode === 'signup' ? 'Create Account' : 'Send Reset Link'}
+                    </NeonButton>
+                    
+                    {authMode === 'login' && (
+                      <motion.button 
+                        type="button" 
+                        onClick={() => setAuthMode('signup')}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full flex justify-center items-center py-3.5 text-sm font-display uppercase tracking-widest text-white bg-red-900/40 hover:bg-red-800/60 rounded-xl transition-all border border-red-500/20 shadow-[0_0_15px_rgba(232,37,58,0.1)] hover:shadow-[0_0_25px_rgba(232,37,58,0.6)]"
+                      >
+                        Sign Up
+                      </motion.button>
+                    )}
+                  </div>
                   
                   <div className="flex flex-col items-center gap-4 pt-8 text-[11px] text-ronin-muted uppercase tracking-wider">
-                    <a href="#" className="text-ronin-crimson hover:text-red-400 hover:underline transition-colors">Sign in with another email</a>
-                    <p className="opacity-50">Ronin Terms & Privacy Policy</p>
+                    {authMode === 'login' ? (
+                      <button type="button" onClick={() => setAuthMode('signup')} className="text-ronin-crimson hover:text-red-400 hover:underline transition-colors">
+                        Don't have an account? Sign up
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => setAuthMode('login')} className="text-ronin-crimson hover:text-red-400 hover:underline transition-colors">
+                        Already have an account? Sign in
+                      </button>
+                    )}
+                    <p className="opacity-50 mt-2">Ronin Terms & Privacy Policy</p>
                   </div>
                 </motion.form>
               )}
