@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { Home, Swords, Target, Trophy, BookOpen, Map, Settings, LogOut, Loader2 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth.js'
 import RoninMark from '../components/branding/RoninMark.jsx'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const navItems = [
@@ -13,6 +13,42 @@ const navItems = [
   { to: '/dashboard/tutorials', label: 'Tutorials', icon: BookOpen },
   { to: '/dashboard/paths', label: 'Paths', icon: Map },
 ]
+
+const TypingLogout = () => {
+  const [displayedText, setDisplayedText] = useState('')
+  const fullText = "Logging Out"
+
+  useEffect(() => {
+    let i = 0
+    const interval = setInterval(() => {
+      i++
+      setDisplayedText(fullText.slice(0, i))
+      if (i >= fullText.length) clearInterval(interval)
+    }, 100) // 100ms per char
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="flex items-center text-white font-display font-bold tracking-[0.2em] drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+      <div>
+        {displayedText.split('').map((char, index) => {
+          const isCap = char === 'L' || char === 'O'
+          if (char === ' ') return <span key={index}>&nbsp;</span>
+          return (
+            <span key={index} className={isCap ? "text-4xl md:text-5xl" : "text-2xl md:text-3xl"}>
+              {char}
+            </span>
+          )
+        })}
+      </div>
+      <motion.div
+        animate={{ opacity: [1, 0] }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+        className="ml-2 h-8 w-4 bg-white md:h-10 md:w-5"
+      />
+    </div>
+  )
+}
 
 export default function Sidebar() {
   const { currentUser, logout } = useAuth()
@@ -37,7 +73,7 @@ export default function Sidebar() {
         
         setTimeout(() => {
           logout()
-        }, 1500)
+        }, 2200)
       }, 1500)
     }, 2000)
   }
@@ -158,9 +194,7 @@ export default function Sidebar() {
             animate={{ opacity: 1 }}
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black"
           >
-            <p className="text-4xl md:text-5xl font-display font-bold uppercase tracking-[0.2em] text-ronin-crimson drop-shadow-[0_0_20px_rgba(232,37,58,0.5)]">
-              Logging Out...
-            </p>
+            <TypingLogout />
           </motion.div>
         )}
       </AnimatePresence>
