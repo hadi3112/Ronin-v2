@@ -18,6 +18,7 @@ import FoundationsChallengePage from './pages/FoundationsChallengePage.jsx'
 import FoundationsModulePage from './pages/FoundationsModulePage.jsx'
 
 import ComingSoonPage from './pages/ComingSoonPage.jsx'
+import TrainingGroundsMapPage from './pages/TrainingGroundsMapPage.jsx'
 
 export default function App() {
   return (
@@ -64,7 +65,7 @@ export default function App() {
         <Route path="training/:language" element={<IDETrainingPage />} />
         
         {/* Coming Soon Routes */}
-        <Route path="training" element={<ComingSoonPage />} />
+        <Route path="training" element={<TrainingGroundsMapPage />} />
         <Route path="challenges" element={<ComingSoonPage />} />
         <Route path="scoreboard" element={<ComingSoonPage />} />
         <Route path="tutorials" element={<ComingSoonPage />} />

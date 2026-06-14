@@ -66,6 +66,19 @@ export default function IDEQuestionPanel({ questionData, language, runResult, on
           </p>
         </div>
 
+        {/* ── Background Video Player (Embedded) ── */}
+        {questionData.metadata?.video && (
+          <div className="rounded-xl border border-white/[0.07] bg-black/30 overflow-hidden mb-4 relative aspect-video flex items-center justify-center group">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+            <p className="z-10 text-xs font-semibold text-ronin-gold/60">
+              Embedded Video Player Placeholder
+            </p>
+            <p className="absolute bottom-3 left-3 z-10 text-[10px] text-white/30">
+              {questionData.metadata.video.firebaseStoragePath}
+            </p>
+          </div>
+        )}
+
         {/* ── Description (Markdown) ── */}
         <div className="rounded-xl border border-white/[0.07] bg-black/30 p-4 text-sm text-ronin-muted leading-relaxed">
           <ReactMarkdown
@@ -177,17 +190,6 @@ export default function IDEQuestionPanel({ questionData, language, runResult, on
           <BookOpen className="h-3.5 w-3.5" />
           Show Reasoning
         </button>
-
-        {questionData.metadata?.video && (
-          <button
-            type="button"
-            onClick={onOpenVideo}
-            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-ronin-muted transition-all duration-200 hover:border-ronin-gold/30 hover:text-ronin-cream"
-          >
-            <Video className="h-3.5 w-3.5" />
-            Video Explanation
-          </button>
-        )}
       </div>
 
       <LearnMoreDialog

@@ -6,9 +6,10 @@ import ReactMarkdown from 'react-markdown'
 import IDEQuestionPanel from '../features/training/IDEQuestionPanel.jsx'
 import IDEEditorPanel, { PYTHON_DEFAULT } from '../features/training/IDEEditorPanel.jsx'
 import IDEConsolePanel from '../features/training/IDEConsolePanel.jsx'
-import IDEGeminiPanel from '../features/training/IDEGeminiPanel.jsx'
+import IDEConsolePanel from '../features/training/IDEConsolePanel.jsx'
 import IDEBottomBar from '../features/training/IDEBottomBar.jsx'
 import PhaserBlocksPanel from '../features/training/PhaserBlocksPanel.jsx'
+import LoadingContainer from '../features/training/LoadingContainer.jsx'
 import { runPythonCode } from '../executors/pythonExecutor.js'
 import { getQuestion } from '../services/questionLoader.js'
 import { useAuth } from '../hooks/useAuth.js'
@@ -20,7 +21,6 @@ import {
 import {
   PROBLEM_BLOCKS,
   getTestCodeForProblem,
-  generateGeminiHint,
 } from '../features/training/IDEBlocksRunner.js'
 
 const LANG_META = {
@@ -36,7 +36,7 @@ const formatInput = (input) => {
   return String(input)
 }
 
-const SEQUENCE = ['two_sum', 'linked_list_reversal', 'dfs_traversal', 'circular_queue']
+const SEQUENCE = ['foundations_m1_video_1', 'foundations_m1_l1']
 
 export default function IDETrainingPage() {
   const { language: langSlug } = useParams()
@@ -63,12 +63,11 @@ export default function IDETrainingPage() {
   const [runResult, setRunResult] = useState(null)
   const [isPassed, setIsPassed] = useState(false)
 
-  // ── Gemini Chat & Dialog Hint states ──────────────────────────────────────
-  const [geminiMessages, setGeminiMessages] = useState([])
-  const [geminiHintDialog, setGeminiHintDialog] = useState(null) // text or null for modal
-  const [showVisualHint, setShowVisualHint] = useState(false)
-  const [showIncorrectDialog, setShowIncorrectDialog] = useState(false)
-  const [isThinking, setIsThinking] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(null)
+  
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false)
+  const [showSavingProgress, setShowSavingProgress] = useState(false)
 
   // ── Submission verification dialog states ──────────────────────────────────
   const [submissionActive, setSubmissionActive] = useState(false)
@@ -101,10 +100,8 @@ export default function IDETrainingPage() {
     setHasRun(false)
     setIsPassed(false)
     setRunResult(null)
-    setGeminiMessages([])
-    setGeminiHintDialog(null)
-    setShowVisualHint(false)
-    setShowIncorrectDialog(false)
+    setIsLoading(true)
+    setFetchError(null)
     setSubmissionActive(false)
     setSubmissionProgress(0)
     setSubmissionCases([])
@@ -115,38 +112,25 @@ export default function IDETrainingPage() {
     setDetailedCaseIdx(null)
     setRunAttempts(0)
     setHintsOpened(0)
-    setGeminiHintsReceived(0)
-    setBlockMovesMade(0)
-    idleTipTriggeredRef.current = false
     startTimeRef.current = Date.now()
 
-    getQuestion('python', problemId)
+    getQuestion('foundations', problemId)
       .then((data) => {
         setQuestionData(data)
-        setCode(data.starterCode)
+        setCode(data.starterCode || PYTHON_DEFAULT)
         // Setup blocks array
         const blks = PROBLEM_BLOCKS[problemId] || []
         setArrangedBlocks(blks.map((b) => ({ id: b.id, correctPosition: b.correctPosition })))
+        setIsLoading(false)
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err)
+        setFetchError(err.message)
+        setIsLoading(false)
+      })
   }, [problemId])
 
-  // ── 90-second Idle Hint Prompt ────────────────────────────────────────────
-  useEffect(() => {
-    if (mode !== 'blocks' || !questionData || idleTipTriggeredRef.current) return
 
-    const timer = setTimeout(() => {
-      if (hintsOpened === 0 && !idleTipTriggeredRef.current) {
-        idleTipTriggeredRef.current = true
-        // Trigger Gemini chat notification
-        const randomBlockIndex = Math.floor(Math.random() * (PROBLEM_BLOCKS[problemId]?.length || 8)) + 1
-        const tipMsg = `Try clicking the arrow on block ${randomBlockIndex} to understand what it does.`
-        setGeminiMessages((prev) => [...prev, { role: 'bot', text: tipMsg }])
-      }
-    }, 90000) // 90 seconds
-
-    return () => clearTimeout(timer)
-  }, [mode, questionData, hintsOpened, problemId])
 
   // Handle block order swap from Phaser scene
   const handleBlockOrderChange = useCallback((newOrder) => {
@@ -157,16 +141,7 @@ export default function IDETrainingPage() {
   // Handle explanation dropdown clicked
   const handleDropdownOpened = useCallback((blockId) => {
     setHintsOpened((h) => h + 1)
-    
-    // Custom explanation feedback in the Gemini panel
-    const b = PROBLEM_BLOCKS[problemId]?.find((x) => x.id === blockId)
-    if (b) {
-      setGeminiMessages((prev) => [
-        ...prev,
-        { role: 'bot', text: `Block Explanation: "${b.code.trim()}" -> ${b.explanation}` },
-      ])
-    }
-  }, [problemId])
+  }, [])
 
   const handleRun = async () => {
     setIsRunning(true)
@@ -218,17 +193,8 @@ export default function IDETrainingPage() {
         passed: isOk,
       })
 
-      if (!isOk && mode === 'blocks') {
-        // Trigger the visual Ronin blocks helper modal
-        setShowVisualHint(true)
-        const hintText = generateGeminiHint(problemId, arrangedBlocks)
-        setGeminiHintsReceived((h) => h + 1)
-        setGeminiMessages((prev) => [...prev, { role: 'bot', text: hintText }])
-      } else if (isOk) {
-        setGeminiMessages((prev) => [
-          ...prev,
-          { role: 'bot', text: 'All test assertions passed successfully! Excellent work, click Submit below to proceed.' },
-        ])
+      if (isOk) {
+        // Success
       }
     } catch (err) {
       setRunResult({ stdout: '', errors: err.toString(), passed: false, results: [] })
@@ -421,13 +387,60 @@ export default function IDETrainingPage() {
   }
 
   const handleQuitOrExit = () => {
-    // If the user cleared at least 1 question, show the test progression card on exit!
-    if (solvedCount >= 1) {
-      computeAndSaveSkillVector(userId)
-      setCompletionDialog(true)
-    } else {
+    setShowQuitConfirm(true)
+  }
+
+  const handleConfirmQuit = () => {
+    setShowQuitConfirm(false)
+    setShowSavingProgress(true)
+    setTimeout(() => {
+      setShowSavingProgress(false)
       navigate('/dashboard')
-    }
+    }, 1500)
+  }
+
+  if (isLoading) {
+    return <LoadingContainer />
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-black">
+        <div className="max-w-md p-8 border border-ronin-crimson/30 rounded-2xl bg-[#0a0a0a] text-center">
+          <X className="h-8 w-8 text-ronin-crimson mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Error Loading Challenge</h2>
+          <p className="text-gray-400 mb-6">{fetchError}</p>
+          <button onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-white/10 rounded-lg hover:bg-white/20 text-white font-bold uppercase tracking-widest text-xs">Return to Dashboard</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Blocking Video Modal for Submodule 1 ──
+  if (problemId === 'foundations_m1_video_1' && questionData) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-64px)] items-center justify-center bg-black/95 p-6">
+        <div className="w-full max-w-4xl p-8 rounded-2xl border border-white/10 bg-[#0a0506]/98 shadow-2xl flex flex-col h-full max-h-[85vh]">
+          <h1 className="text-2xl font-display font-bold text-ronin-cream mb-2 uppercase tracking-widest">{questionData.title || 'Video Explanation'}</h1>
+          <p className="text-sm text-ronin-muted mb-6">{questionData.description || 'Watch this video before continuing.'}</p>
+          
+          <div className="flex-1 min-h-0 bg-gray-900 rounded-xl mb-8 flex items-center justify-center border border-white/10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+              <p className="z-10 text-sm font-semibold text-ronin-gold/60">
+                Video Player Placeholder
+              </p>
+              <p className="absolute bottom-4 left-4 z-10 text-xs text-white/30">
+                {questionData.metadata?.video?.firebaseStoragePath || "gs://path-to-video.mp4"}
+              </p>
+          </div>
+          
+          <div className="flex gap-4 justify-end shrink-0">
+            <button onClick={handleForceNextChallenge} className="px-6 py-3 rounded-lg border border-white/20 text-white font-bold hover:bg-white/10 transition-colors uppercase tracking-widest text-xs">Skip</button>
+            <button onClick={handleForceNextChallenge} className="px-6 py-3 rounded-lg bg-ronin-crimson text-white font-bold hover:bg-red-600 transition-colors uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(239,68,68,0.4)]">Continue</button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -551,8 +564,7 @@ export default function IDETrainingPage() {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4 }}
-                className="min-h-0 flex-[3] overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-black/50 p-5 shadow-ronin"
-                style={{ flexBasis: '60%' }}
+                className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-black/50 p-5 shadow-ronin"
               >
                 <IDEQuestionPanel
                   language={meta.label}
@@ -560,21 +572,6 @@ export default function IDETrainingPage() {
                   runResult={runResult}
                   onOpenReasoning={() => setActiveModal('reasoning')}
                   onOpenVideo={() => setActiveModal('video')}
-                />
-              </motion.div>
-
-              {/* Gemini response chat logs */}
-              <motion.div
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.06 }}
-                className="min-h-0 overflow-hidden"
-                style={{ flexBasis: '40%', flex: '2' }}
-              >
-                <IDEGeminiPanel
-                  hasRun={hasRun}
-                  messages={geminiMessages}
-                  isThinking={isThinking}
                 />
               </motion.div>
             </div>
@@ -722,81 +719,7 @@ export default function IDETrainingPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Visual Ronin Helper Modal for Draggable Code Blocks ── */}
-      <AnimatePresence>
-        {showVisualHint && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-lg overflow-hidden rounded-3xl border border-white/10 bg-[#0a0506]/98 p-6 text-center shadow-ronin-red flex flex-col max-h-[90vh]"
-            >
-              <div className="flex items-center gap-2 mb-3 text-ronin-crimson justify-center">
-                <Sparkles className="h-6 w-6 text-ronin-gold animate-pulse" />
-                <h3 className="font-display text-lg font-bold text-ronin-cream">Ronin Helper Analysis</h3>
-              </div>
-              
-              <p className="text-xs leading-relaxed text-ronin-muted mb-4 max-w-sm mx-auto">
-                Review your current block arrangement. Correctly aligned blocks are highlighted in green, while misplaced ones are highlighted in red to help you debug your logical flow.
-              </p>
-
-              {/* Visual Block Stack */}
-              <div className="space-y-3 mb-6 overflow-y-auto pr-1 flex-1 min-h-0 text-left custom-scrollbar">
-                {arrangedBlocks.map((userBlock, idx) => {
-                  const fullBlock = PROBLEM_BLOCKS[problemId]?.find((b) => b.id === userBlock.id)
-                  const isAligned = userBlock.correctPosition === idx + 1
-                  
-                  return (
-                    <div
-                      key={userBlock.id}
-                      className={`rounded-2xl p-3.5 border transition-all duration-200 bg-black/40 flex flex-col gap-2 ${
-                        isAligned 
-                          ? 'border-emerald-500/35 hover:border-emerald-500/50 shadow-sm shadow-emerald-950/20' 
-                          : 'border-ronin-crimson/35 hover:border-ronin-crimson/50 shadow-sm shadow-red-950/20'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          isAligned 
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' 
-                            : 'bg-ronin-crimson/10 text-ronin-coral border border-ronin-crimson/25'
-                        }`}>
-                          {isAligned ? '✓ Aligned' : '✗ Misplaced'}
-                        </span>
-                        <span className="text-[10px] uppercase tracking-widest text-white/30 font-semibold">
-                          Slot {idx + 1}
-                        </span>
-                      </div>
-                      
-                      {/* Code preview snippet */}
-                      <pre className="font-mono text-[11.5px] leading-relaxed text-ronin-cream overflow-x-auto p-2.5 bg-[#090506] rounded-xl border border-white/5 whitespace-pre">
-                        <code>{fullBlock?.code}</code>
-                      </pre>
-                      
-                      {/* Block operation tooltip */}
-                      <p className="text-[11px] leading-normal text-ronin-muted italic pl-1 flex items-start gap-1">
-                        <span className="text-ronin-gold not-italic">💡</span>
-                        <span>{fullBlock?.explanation}</span>
-                      </p>
-                    </div>
-                  )
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowVisualHint(false)}
-                className="w-full rounded-xl bg-ronin-crimson py-3 text-xs font-semibold uppercase tracking-wider text-ronin-cream hover:bg-[#d82229] transition-all shadow-md shadow-ronin-red/20 shrink-0"
-              >
-                I Understand, Let me think
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Centered Non-Dismissible Dialog: Ready to test yourself? ── */}
+      {/* ── Dialog modal overlays (Reasoning & Video intro explanation) ── */}
       <AnimatePresence>
         {completionDialog && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
@@ -1077,6 +1000,55 @@ export default function IDETrainingPage() {
                 </button>
               </div>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Quit Dialog Flow ── */}
+      <AnimatePresence>
+        {showQuitConfirm && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.93, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.93, opacity: 0, y: 15 }}
+              className="w-full max-w-md rounded-3xl border-2 border-ronin-crimson/40 bg-[#0a0506]/98 p-8 text-center shadow-[0_0_40px_rgba(239,68,68,0.2)]"
+            >
+              <h3 className="font-display text-xl font-bold text-ronin-crimson mb-4 tracking-widest drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] uppercase">
+                Are you sure you want to quit?
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-300 mb-8">
+                Your progress will be saved, but you will lose your current active workspace state.
+              </p>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleConfirmQuit}
+                  className="w-full rounded-xl bg-ronin-crimson/10 border border-ronin-crimson/30 py-3.5 text-sm font-bold uppercase tracking-[0.2em] text-ronin-crimson hover:bg-ronin-crimson/20 hover:border-ronin-crimson/60 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all cursor-pointer"
+                >
+                  Yes, Quit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQuitConfirm(false)}
+                  className="w-full rounded-xl border border-white/10 bg-black/40 py-3.5 text-sm font-semibold uppercase tracking-widest text-ronin-cream hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showSavingProgress && (
+          <div className="fixed inset-0 z-[210] flex flex-col items-center justify-center p-4 bg-black/95 backdrop-blur-md">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-ronin-crimson/20 text-ronin-crimson animate-pulse mb-6 border border-ronin-crimson/30 shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+              <Sparkles className="h-8 w-8" />
+            </div>
+            <h3 className="font-display text-xl font-bold text-ronin-cream mb-2 uppercase tracking-widest drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">
+              Saving Progress...
+            </h3>
+            <p className="text-sm text-ronin-muted">Updating your Ronin Profile</p>
           </div>
         )}
       </AnimatePresence>

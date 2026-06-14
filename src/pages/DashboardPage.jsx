@@ -54,7 +54,7 @@ export default function DashboardPage() {
     if (onboardingPhase === 'training_grounds_pending') {
       await updateOnboardingPhase('targeted_challenges_pending')
     }
-    navigate('/dashboard/training')
+    navigate('/dashboard/training/python')
   }, [onboardingPhase, updateOnboardingPhase, navigate])
 
   return (
