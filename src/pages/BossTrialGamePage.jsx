@@ -229,7 +229,7 @@ export default function BossTrialGamePage() {
         addToast(`Incorrect answer. +${game.latestXPGain} XP`, 'evaluation')
       }
       
-      setTimeout(() => addToast('Agent Ronin Agent Updated', 'evaluation'), 800)
+      setTimeout(() => addToast('Ronin AI Agent updated', 'evaluation'), 800)
       
       if (game.latestStreakLabel) {
         const streakMsg = game.expansion 
