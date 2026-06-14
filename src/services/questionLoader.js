@@ -1,9 +1,11 @@
+import { fetchQuestion } from './firebase/firestoreService.js';
+
 /**
  * questionLoader.js
  * 
  * Abstract layer for loading question bundles.
- * Currently, it loads from local Vite imports. 
- * LATER: It will fetch from Firestore and Cloud Storage.
+ * Currently, it loads from local Vite imports for local tracks,
+ * and fetches from Firestore for the Foundations track.
  * 
  * The UI should ONLY interact with this service and the QuestionDefinition object it returns.
  */
@@ -28,9 +30,45 @@
  */
 
 export async function getQuestion(track, id) {
+  // Check if we are loading a Foundations question from Firestore
+  if (track === 'foundations') {
+    try {
+      const qDoc = await fetchQuestion(id);
+      if (!qDoc) {
+        throw new Error(`Question ${id} not found in Firestore`);
+      }
+
+      // Combine visible and hidden tests for the test runner compatibility
+      const combinedTests = [
+        ...(qDoc.testsVisible || []),
+        ...(qDoc.testsHidden || [])
+      ];
+
+      return {
+        id: qDoc.id || id,
+        title: qDoc.title,
+        difficulty: qDoc.difficulty || 'easy',
+        promptMarkdown: qDoc.questionMarkdown || qDoc.promptMarkdown || '',
+        reasoningMarkdown: qDoc.reasoningMarkdown || '',
+        starterCode: typeof qDoc.starterCode === 'object' ? qDoc.starterCode.python : qDoc.starterCode || 'pass',
+        tests: combinedTests,
+        metadata: {
+          id: qDoc.id || id,
+          title: qDoc.title,
+          difficulty: qDoc.difficulty || 'easy',
+          track: qDoc.track || 'foundations',
+          tags: qDoc.tags || []
+        }
+      };
+    } catch (error) {
+      console.error(`Failed to load Foundations question [${id}] from Firestore:`, error);
+      throw error;
+    }
+  }
+
+  // Fallback for local files (e.g. Builder track)
   try {
     // We use Vite's specific ?raw suffix to import text content without executing it.
-    // In a future Firebase migration, these will be replaced with fetch() or getDoc() calls.
     const promptMod = await import(`../content/questions/${track}/${id}/prompt.md?raw`);
     const reasoningMod = await import(`../content/questions/${track}/${id}/reasoning.md?raw`);
     const starterMod = await import(`../content/questions/${track}/${id}/starter.py?raw`);
