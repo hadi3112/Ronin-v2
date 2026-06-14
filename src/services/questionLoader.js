@@ -1,4 +1,4 @@
-import { fetchQuestion } from './firebase/firestoreService.js';
+import { fetchQuestion, fetchLesson, fetchVideoLesson } from './firebase/firestoreService.js';
 
 /**
  * questionLoader.js
@@ -33,9 +33,44 @@ export async function getQuestion(track, id) {
   // Check if we are loading a Foundations question from Firestore
   if (track === 'foundations') {
     try {
-      const qDoc = await fetchQuestion(id);
+      let qDoc = null;
+      
+      if (id.includes('_video_')) {
+        qDoc = await fetchVideoLesson(id);
+      } else if (id.includes('_l')) {
+        qDoc = await fetchLesson(id);
+      } else {
+        qDoc = await fetchQuestion(id);
+      }
+
       if (!qDoc) {
-        throw new Error(`Question ${id} not found in Firestore`);
+        throw new Error(`Content node ${id} not found in Firestore`);
+      }
+
+      if (id.includes('_video_') || qDoc.type === 'video') {
+        return {
+          id: qDoc.id,
+          title: qDoc.title,
+          description: qDoc.description,
+          type: 'video',
+          metadata: {
+            video: {
+              firebaseStoragePath: qDoc.firebaseStoragePath
+            }
+          }
+        }
+      }
+
+      if (id.includes('_l') || qDoc.type === 'text') {
+        return {
+          id: qDoc.id,
+          title: qDoc.title,
+          promptMarkdown: qDoc.contentMarkdown,
+          type: 'text',
+          starterCode: 'pass',
+          tests: [],
+          metadata: {}
+        }
       }
 
       // Combine visible and hidden tests for the test runner compatibility

@@ -39,10 +39,17 @@ export async function fetchModule(moduleId) {
 }
 
 /**
- * Fetches lesson content (video or text) by ID
+ * Fetches lesson content (text) by ID
  */
 export async function fetchLesson(lessonId) {
   return fetchDocByPath('content/lessons/items', lessonId);
+}
+
+/**
+ * Fetches video lesson content by ID
+ */
+export async function fetchVideoLesson(videoId) {
+  return fetchDocByPath('content/videoLessons/items', videoId);
 }
 
 /**
