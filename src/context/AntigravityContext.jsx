@@ -79,3 +79,10 @@ export function useAntigravity() {
   }
   return ctx
 }
+
+import { AgentPipeline } from '../services/agents/agentOrchestration.js'
+
+// Simple hook to expose the Three-Layer Agent Pipeline to React components
+export function useAgents() {
+  return AgentPipeline
+}
