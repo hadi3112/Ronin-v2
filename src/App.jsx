@@ -13,6 +13,11 @@ import LoginPage from './pages/LoginPage.jsx'
 import LandingPage from './pages/LandingPage.jsx'
 import PreferencesPage from './pages/PreferencesPage.jsx'
 import IDETrainingPage from './pages/IDETrainingPage.jsx'
+import FoundationsLessonPage from './pages/FoundationsLessonPage.jsx'
+import FoundationsChallengePage from './pages/FoundationsChallengePage.jsx'
+import FoundationsModulePage from './pages/FoundationsModulePage.jsx'
+
+import ComingSoonPage from './pages/ComingSoonPage.jsx'
 
 export default function App() {
   return (
@@ -57,6 +62,18 @@ export default function App() {
         <Route path="about" element={<AboutPage />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="training/:language" element={<IDETrainingPage />} />
+        
+        {/* Coming Soon Routes */}
+        <Route path="training" element={<ComingSoonPage />} />
+        <Route path="challenges" element={<ComingSoonPage />} />
+        <Route path="scoreboard" element={<ComingSoonPage />} />
+        <Route path="tutorials" element={<ComingSoonPage />} />
+        <Route path="paths" element={<ComingSoonPage />} />
+
+        {/* Foundations Routes */}
+        <Route path="lesson/:trackId/:lessonId" element={<FoundationsLessonPage />} />
+        <Route path="challenge/:setId" element={<FoundationsChallengePage />} />
+        <Route path="module/:moduleId" element={<FoundationsModulePage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
