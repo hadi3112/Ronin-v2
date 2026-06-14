@@ -157,10 +157,11 @@ export default function BossTrialGamePage() {
   // In diagnostic mode: no XP update, no scoreboard write, telemetry goes to
   // diagnosticSession/{userId} and onboardingPhase advances on completion.
   const isDiagnostic = Boolean(location.state?.isDiagnostic) || onboardingPhase === 'diagnostic_pending'
+  const diagnosticType = location.state?.diagnosticType || (onboardingPhase === 'diagnostic_pending' ? 'foundations' : 'builder')
 
   const sessionId = useMemo(() => generateSessionId(), [])
   const userId = user?.uid ?? 'guest'
-  const game = useAdaptiveBossTrialGame({ userId, sessionId })
+  const game = useAdaptiveBossTrialGame({ userId, sessionId, isDiagnostic, diagnosticType })
   const answeredRef = useRef(/** @type {string | null} */ (null))
   const [sessionReviewOpen, setSessionReviewOpen] = useState(false)
   const [quitConfirmOpen, setQuitConfirmOpen] = useState(false)
