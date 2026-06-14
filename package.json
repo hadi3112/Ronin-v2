@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "firebase": "^12.14.0",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.511.0",
     "phaser": "^3.90.0",
