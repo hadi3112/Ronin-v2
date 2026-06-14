@@ -1,0 +1,22 @@
+{
+  "name": "ronin-migration",
+  "version": "1.0.0",
+  "description": "One-time Firebase migration scripts for Ronin platform content",
+  "main": "migrate.js",
+  "scripts": {
+    "migrate": "node migrate.js",
+    "migrate:dry": "node -e \"process.env.DRY_RUN='true'\" migrate.js",
+    "migrate:questions": "node migrate.js questions",
+    "migrate:tracks": "node migrate.js tracks",
+    "migrate:modules": "node migrate.js modules",
+    "migrate:lessons": "node migrate.js lessons",
+    "migrate:challenges": "node migrate.js challengeSets",
+    "migrate:templates": "node migrate.js uiTemplates"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

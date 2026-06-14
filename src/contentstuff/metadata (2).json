@@ -1,0 +1,24 @@
+{
+  "id": "grade_classifier",
+  "title": "Grade Classifier",
+  "difficulty": "easy",
+  "track": "foundations",
+  "module": "foundations_module_5",
+  "estimatedMinutes": 15,
+  "conceptsTaught": ["if-elif-else", "comparison operators", "chained conditions", "return"],
+  "stats": {
+    "attempts": 0,
+    "bestTimeSeconds": null,
+    "averageTimeSeconds": null,
+    "testsPassedBest": 0
+  },
+  "video": {
+    "firebaseStoragePath": "gs://ronin-videos/foundations/grade_classifier_intro.mp4",
+    "preload": true,
+    "durationSeconds": 120
+  },
+  "solutionBlockCount": 9,
+  "templateType": "none",
+  "visualConfig": {},
+  "tags": ["conditionals", "if-elif-else", "comparison", "strings"]
+}

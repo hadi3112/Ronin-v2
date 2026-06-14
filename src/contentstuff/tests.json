@@ -1,0 +1,27 @@
+[
+  {
+    "id": "tc-1",
+    "input": { "num1": 10, "num2": 5, "operator": "+" },
+    "expected": 15
+  },
+  {
+    "id": "tc-2",
+    "input": { "num1": 10, "num2": 5, "operator": "-" },
+    "expected": 5
+  },
+  {
+    "id": "tc-3",
+    "input": { "num1": 10, "num2": 5, "operator": "*" },
+    "expected": 50
+  },
+  {
+    "id": "tc-hidden-1",
+    "input": { "num1": 10, "num2": 5, "operator": "/" },
+    "expected": 2.0
+  },
+  {
+    "id": "tc-hidden-2",
+    "input": { "num1": 0, "num2": 7, "operator": "+" },
+    "expected": 7
+  }
+]

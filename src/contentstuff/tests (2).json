@@ -1,0 +1,27 @@
+[
+  {
+    "id": "tc-1",
+    "input": { "score": 95 },
+    "expected": "A"
+  },
+  {
+    "id": "tc-2",
+    "input": { "score": 82 },
+    "expected": "B"
+  },
+  {
+    "id": "tc-3",
+    "input": { "score": 55 },
+    "expected": "F"
+  },
+  {
+    "id": "tc-hidden-1",
+    "input": { "score": 70 },
+    "expected": "C"
+  },
+  {
+    "id": "tc-hidden-2",
+    "input": { "score": 60 },
+    "expected": "D"
+  }
+]
