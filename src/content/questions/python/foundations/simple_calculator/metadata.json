@@ -1,0 +1,24 @@
+{
+  "id": "simple_calculator",
+  "title": "Simple Calculator",
+  "difficulty": "easy",
+  "track": "foundations",
+  "module": "foundations_module_3",
+  "estimatedMinutes": 15,
+  "conceptsTaught": ["conditionals", "if-elif-else", "operators", "return"],
+  "stats": {
+    "attempts": 0,
+    "bestTimeSeconds": null,
+    "averageTimeSeconds": null,
+    "testsPassedBest": 0
+  },
+  "video": {
+    "firebaseStoragePath": "gs://ronin-videos/foundations/simple_calculator_intro.mp4",
+    "preload": true,
+    "durationSeconds": 120
+  },
+  "solutionBlockCount": 8,
+  "templateType": "none",
+  "visualConfig": {},
+  "tags": ["conditionals", "math", "operators", "if-elif"]
+}

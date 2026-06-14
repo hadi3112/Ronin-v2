@@ -1,0 +1,24 @@
+{
+  "id": "age_calculator",
+  "title": "Age Calculator",
+  "difficulty": "easy",
+  "track": "foundations",
+  "module": "foundations_module_4",
+  "estimatedMinutes": 10,
+  "conceptsTaught": ["subtraction", "variables", "return", "integers"],
+  "stats": {
+    "attempts": 0,
+    "bestTimeSeconds": null,
+    "averageTimeSeconds": null,
+    "testsPassedBest": 0
+  },
+  "video": {
+    "firebaseStoragePath": "gs://ronin-videos/foundations/age_calculator_intro.mp4",
+    "preload": true,
+    "durationSeconds": 90
+  },
+  "solutionBlockCount": 4,
+  "templateType": "none",
+  "visualConfig": {},
+  "tags": ["variables", "subtraction", "return", "integers"]
+}

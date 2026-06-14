@@ -1,0 +1,27 @@
+[
+  {
+    "id": "tc-1",
+    "input": { "birth_year": 2005, "current_year": 2025 },
+    "expected": 20
+  },
+  {
+    "id": "tc-2",
+    "input": { "birth_year": 2010, "current_year": 2025 },
+    "expected": 15
+  },
+  {
+    "id": "tc-3",
+    "input": { "birth_year": 2000, "current_year": 2024 },
+    "expected": 24
+  },
+  {
+    "id": "tc-hidden-1",
+    "input": { "birth_year": 1990, "current_year": 2026 },
+    "expected": 36
+  },
+  {
+    "id": "tc-hidden-2",
+    "input": { "birth_year": 2015, "current_year": 2025 },
+    "expected": 10
+  }
+]

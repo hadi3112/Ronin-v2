@@ -1,0 +1,24 @@
+{
+  "id": "number_guessing_game",
+  "title": "Number Guessing Game",
+  "difficulty": "easy",
+  "track": "foundations",
+  "module": "foundations_module_6",
+  "estimatedMinutes": 20,
+  "conceptsTaught": ["for loops", "enumerate", "early return", "break logic"],
+  "stats": {
+    "attempts": 0,
+    "bestTimeSeconds": null,
+    "averageTimeSeconds": null,
+    "testsPassedBest": 0
+  },
+  "video": {
+    "firebaseStoragePath": "gs://ronin-videos/foundations/number_guessing_game_intro.mp4",
+    "preload": true,
+    "durationSeconds": 150
+  },
+  "solutionBlockCount": 8,
+  "templateType": "none",
+  "visualConfig": {},
+  "tags": ["loops", "for", "enumerate", "conditionals", "return"]
+}
