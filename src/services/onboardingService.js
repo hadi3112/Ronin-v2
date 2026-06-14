@@ -34,9 +34,10 @@
  * Never commit real API keys — use Vite env: import.meta.env.VITE_FIREBASE_*
  */
 
-/** @typedef {'diagnostic_pending' | 'training_grounds_pending' | 'targeted_challenges_pending' | 'onboarding_complete'} OnboardingPhase */
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore'
+import { app, db } from './firebase/firebaseConfig.js'
 
-const LS_KEY_PREFIX = 'ronin.onboarding.v1.'
+/** @typedef {'diagnostic_pending' | 'training_grounds_pending' | 'targeted_challenges_pending' | 'onboarding_complete'} OnboardingPhase */
 
 // ---------------------------------------------------------------------------
 // Phase management
@@ -48,17 +49,11 @@ const LS_KEY_PREFIX = 'ronin.onboarding.v1.'
  * @returns {Promise<OnboardingPhase | null>}
  */
 export async function getOnboardingPhase(userId) {
-  // FIREBASE_PLACEHOLDER — replace with:
-  //   const db = getFirestore(app)
-  //   const snap = await getDoc(doc(db, 'users', userId))
-  //   return snap.exists() ? snap.data().onboardingPhase ?? null : null
-
   try {
-    const raw = localStorage.getItem(`${LS_KEY_PREFIX}${userId}`)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return parsed?.onboardingPhase ?? null
-  } catch {
+    const snap = await getDoc(doc(db, 'users', userId))
+    return snap.exists() ? snap.data().onboardingPhase ?? null : null
+  } catch (error) {
+    console.error("Error reading onboarding phase:", error)
     return null
   }
 }
@@ -70,18 +65,10 @@ export async function getOnboardingPhase(userId) {
  * @returns {Promise<void>}
  */
 export async function setOnboardingPhase(userId, phase) {
-  // FIREBASE_PLACEHOLDER — replace with:
-  //   const db = getFirestore(app)
-  //   await setDoc(doc(db, 'users', userId), { onboardingPhase: phase }, { merge: true })
-
   try {
-    const existing = JSON.parse(localStorage.getItem(`${LS_KEY_PREFIX}${userId}`) || '{}')
-    localStorage.setItem(
-      `${LS_KEY_PREFIX}${userId}`,
-      JSON.stringify({ ...existing, onboardingPhase: phase }),
-    )
-  } catch {
-    /* ignore quota / private mode */
+    await setDoc(doc(db, 'users', userId), { onboardingPhase: phase }, { merge: true })
+  } catch (error) {
+    console.error("Error setting onboarding phase:", error)
   }
 }
 
@@ -115,17 +102,10 @@ export async function setOnboardingPhase(userId, phase) {
  * @returns {Promise<void>}
  */
 export async function writeDiagnosticSession(userId, payload) {
-  // FIREBASE_PLACEHOLDER — replace with:
-  //   const db = getFirestore(app)
-  //   await setDoc(doc(db, 'diagnosticSession', userId), payload)
-
   try {
-    localStorage.setItem(
-      `ronin.diagnosticSession.v1.${userId}`,
-      JSON.stringify(payload),
-    )
-  } catch {
-    /* ignore quota / private mode */
+    await setDoc(doc(db, 'diagnosticSession', userId), payload)
+  } catch (error) {
+    console.error("Error writing diagnostic session:", error)
   }
 }
 
@@ -135,15 +115,11 @@ export async function writeDiagnosticSession(userId, payload) {
  * @returns {Promise<DiagnosticSessionPayload | null>}
  */
 export async function readDiagnosticSession(userId) {
-  // FIREBASE_PLACEHOLDER — replace with:
-  //   const db = getFirestore(app)
-  //   const snap = await getDoc(doc(db, 'diagnosticSession', userId))
-  //   return snap.exists() ? snap.data() : null
-
   try {
-    const raw = localStorage.getItem(`ronin.diagnosticSession.v1.${userId}`)
-    return raw ? JSON.parse(raw) : null
-  } catch {
+    const snap = await getDoc(doc(db, 'diagnosticSession', userId))
+    return snap.exists() ? snap.data() : null
+  } catch (error) {
+    console.error("Error reading diagnostic session:", error)
     return null
   }
 }
@@ -161,6 +137,10 @@ export async function readDiagnosticSession(userId) {
  * @returns {string}
  */
 export function questionToDomain(bankType, subtype) {
+  const foundationsDomains = ['output', 'variables', 'math', 'input', 'conditionals', 'loops']
+  if (foundationsDomains.includes(bankType)) return bankType
+  if (foundationsDomains.includes(subtype)) return subtype
+
   if (bankType === 'system_architecture') {
     if (subtype === 'linked_list_memory') return 'linked_list'
     if (subtype === 'dfs_tree') return 'dfs'
@@ -181,4 +161,10 @@ export const DOMAIN_LABELS = {
   stacktrace: 'Stack Trace',
   code_completion: 'Code Completion',
   conceptual: 'Concept Check',
+  output: 'Output & Print',
+  variables: 'Variables',
+  math: 'Math & Operations',
+  input: 'Input & Types',
+  conditionals: 'Conditionals',
+  loops: 'Loops',
 }
