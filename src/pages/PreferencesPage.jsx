@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ArrowRight, Check, Search } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowRight, Check } from 'lucide-react'
 import AmbientGrid from '../components/layout/AmbientGrid.jsx'
 import GameCanvas from '../components/GameCanvas.jsx'
 import NeonButton from '../components/ui/NeonButton.jsx'
@@ -9,8 +9,6 @@ import { useAuth } from '../hooks/useAuth.js'
 
 const IS_ANDROID = /Mobi|Android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
 
-const interests = ['HTML', 'Machine Learning', 'JavaScript', 'C++', 'CSS', 'Rust', 'Python 3.0', 'Java', 'Solidity']
-const skills = ['Beginner', 'Intermediate', 'Advanced']
 const styles = ['Tutorial heavy', 'Challenge heavy', 'Balanced']
 const contentModes = ['Video based learning', 'Code samples + puzzles', 'Flashcards']
 
@@ -38,12 +36,12 @@ function Chip({ active, children, onClick, color = 'red' }) {
 export default function PreferencesPage() {
   const navigate = useNavigate()
   const { savePreferences } = useAuth()
-  const [selected, setSelected] = useState(() => new Set(['JavaScript', 'C++']))
-  const [skill, setSkill] = useState('Intermediate')
+  
+  const [selectedTrack, setSelectedTrack] = useState('foundations')
   const [learningStyle, setLearningStyle] = useState('Balanced')
   const [selectedModes, setSelectedModes] = useState(() => new Set(['Video based learning']))
-  const [search, setSearch] = useState('')
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+  const [showAdvancedDialog, setShowAdvancedDialog] = useState(null)
 
   useEffect(() => {
     const check = () => {
@@ -57,11 +55,9 @@ export default function PreferencesPage() {
   }, [])
 
   const canContinue = useMemo(
-    () => selected.size > 0 && Boolean(skill) && Boolean(learningStyle) && selectedModes.size > 0,
-    [selected, skill, learningStyle, selectedModes],
+    () => Boolean(learningStyle) && selectedModes.size > 0 && Boolean(selectedTrack),
+    [learningStyle, selectedModes, selectedTrack],
   )
-
-  const filteredInterests = interests.filter((item) => item.toLowerCase().includes(search.toLowerCase()))
 
   function toggleSetItem(setter, label) {
     setter((prev) => {
@@ -72,11 +68,13 @@ export default function PreferencesPage() {
     })
   }
 
-  function handleContinue() {
-    if (!canContinue) return
+  function handleContinue(forcedTrack = null) {
+    const trackToSave = forcedTrack || selectedTrack
+    if (!trackToSave || (!forcedTrack && !canContinue)) return
+    
     savePreferences({
-      interests: [...selected],
-      skill,
+      assignedTrack: trackToSave,
+      skill: 'Beginner',
       learningStyle,
       contentModes: [...selectedModes],
     })
@@ -98,40 +96,61 @@ export default function PreferencesPage() {
               Select tech stacks and learning styles to shape your home page and challenge path.
             </p>
 
-            <label className="relative mt-6 block max-w-lg">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ronin-muted" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search..."
-                className="w-full rounded-2xl border border-white/10 bg-white/90 py-3 pl-10 pr-4 text-sm text-black outline-none ring-2 ring-transparent transition focus:ring-ronin-coral/45"
-              />
-            </label>
-
             <div className="mt-6 space-y-6">
               <div>
-                <p className="mb-3 text-sm font-semibold text-ronin-muted">Suggested</p>
-                <div className="flex flex-wrap gap-2">
-                  {filteredInterests.map((label, i) => {
-                    const colors = ['green', 'warm', 'blue', 'warm', 'blue', 'red', 'warm', 'red', 'blue']
-                    return (
-                      <Chip key={label} active={selected.has(label)} onClick={() => toggleSetItem(setSelected, label)} color={colors[i % colors.length]}>
-                        {selected.has(label) && <Check className="mr-1 inline h-3.5 w-3.5" />}
-                        {label}
-                      </Chip>
-                    )
-                  })}
-                </div>
-              </div>
+                <p className="mb-3 text-sm font-semibold text-ronin-muted">Learning Path Track</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Foundations Card */}
+                  <div 
+                    onClick={() => setSelectedTrack('foundations')}
+                    className={`relative cursor-pointer border-2 rounded-2xl p-4 transition-all ${selectedTrack === 'foundations' ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 bg-white/5'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className={`font-bold ${selectedTrack === 'foundations' ? 'text-emerald-400' : 'text-ronin-cream'}`}>Foundations</h4>
+                      {selectedTrack === 'foundations' && <Check className="h-4 w-4 text-emerald-400" />}
+                    </div>
+                    <p className="text-xs text-ronin-cream/80 mt-1">Start from zero. Build real things.</p>
+                    <span className="inline-block mt-3 px-2 py-0.5 text-[10px] font-medium bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">
+                      Recommended
+                    </span>
+                    <span className="block text-[10px] text-ronin-muted/80 mt-1.5 italic">
+                      For beginners who are completely new to coding
+                    </span>
+                  </div>
 
-              <div>
-                <p className="mb-3 text-sm font-semibold text-ronin-muted">Skill level</p>
-                <div className="flex flex-wrap gap-2">
-                  {skills.map((item) => (
-                    <Chip key={item} active={skill === item} onClick={() => setSkill(item)}>
-                      {item}
-                    </Chip>
-                  ))}
+                  {/* Builder Card */}
+                  <div 
+                    onClick={() => setShowAdvancedDialog('builder')}
+                    className={`relative cursor-pointer border-2 rounded-2xl p-4 transition-all flex flex-col justify-between ${selectedTrack === 'builder' ? 'border-sky-500 bg-sky-500/10' : 'border-white/10 bg-white/5 hover:border-white/20'}`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h4 className={`font-bold ${selectedTrack === 'builder' ? 'text-sky-400' : 'text-ronin-cream'}`}>Builder</h4>
+                        {selectedTrack === 'builder' && <Check className="h-4 w-4 text-sky-400" />}
+                      </div>
+                      <p className="text-xs text-ronin-cream/80 mt-1">Intermediate logic & algorithms.</p>
+                      <span className="block text-[10px] text-ronin-muted/80 mt-1.5 italic">
+                        For those with some coding experience looking to build full-stack logic.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Accelerator Card */}
+                  <div 
+                    onClick={() => setShowAdvancedDialog('accelerator')}
+                    className={`relative cursor-pointer border-2 rounded-2xl p-4 transition-all flex flex-col justify-between ${selectedTrack === 'accelerator' ? 'border-amber-500 bg-amber-500/10' : 'border-white/10 bg-white/5 hover:border-white/20'}`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h4 className={`font-bold ${selectedTrack === 'accelerator' ? 'text-amber-400' : 'text-ronin-cream'}`}>Accelerator</h4>
+                        {selectedTrack === 'accelerator' && <Check className="h-4 w-4 text-amber-400" />}
+                      </div>
+                      <p className="text-xs text-ronin-cream/80 mt-1">Advanced systems & architecture.</p>
+                      <span className="block text-[10px] text-ronin-muted/80 mt-1.5 italic">
+                        For seasoned developers ready to master complex performance optimization.
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -174,12 +193,63 @@ export default function PreferencesPage() {
           <div className="h-1.5 w-28 rounded-full bg-white/20">
             <div className="h-full w-1/2 rounded-full bg-black" />
           </div>
-          <NeonButton type="button" variant="coral" disabled={!canContinue} onClick={handleContinue} className="min-w-44 rounded-2xl py-3 text-lg">
+          <NeonButton type="button" variant="coral" disabled={!canContinue} onClick={() => handleContinue()} className="min-w-44 rounded-2xl py-3 text-lg">
             Done
             <ArrowRight className="h-4 w-4" />
           </NeonButton>
         </div>
       </div>
+
+      {/* Advanced Track Modal */}
+      <AnimatePresence>
+        {showAdvancedDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#0A0508] p-8 shadow-[0_0_50px_rgba(232,37,58,0.15)]"
+            >
+              <div className="text-center">
+                <h3 className="text-2xl font-display font-bold uppercase tracking-widest text-ronin-cream">
+                  {showAdvancedDialog === 'builder' ? 'Builder Track' : 'Accelerator Track'}
+                </h3>
+                <p className="mt-4 text-sm leading-relaxed text-ronin-muted">
+                  You've selected an advanced track! We love the ambition. To ensure you skip ahead to the exact right level, you'll need to blast through our rapid diagnostic test first.
+                </p>
+                <p className="mt-2 text-sm font-semibold text-ronin-cream/90">
+                  Ready to show us what you've got?
+                </p>
+
+                <div className="mt-8 flex flex-col gap-3">
+                  <NeonButton 
+                    type="button" 
+                    onClick={() => {
+                      setSelectedTrack(showAdvancedDialog)
+                      handleContinue(showAdvancedDialog)
+                    }}
+                    className="w-full py-3.5 text-sm tracking-wide"
+                  >
+                    Take Diagnostic Now
+                  </NeonButton>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedDialog(null)}
+                    className="w-full rounded-xl py-3 text-sm font-medium text-ronin-muted transition-colors hover:bg-white/5 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
