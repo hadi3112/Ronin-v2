@@ -64,9 +64,9 @@ export default function App() {
         <Route path="contact" element={<ContactPage />} />
         <Route path="training/:language" element={<IDETrainingPage />} />
         
-        {/* Coming Soon Routes */}
+        {/* Foundations & Challenges Routes */}
         <Route path="training" element={<TrainingGroundsMapPage />} />
-        <Route path="challenges" element={<ComingSoonPage />} />
+        <Route path="challenges" element={<FoundationsChallengePage defaultSetId="cs_foundations_m1" />} />
         <Route path="scoreboard" element={<ComingSoonPage />} />
         <Route path="tutorials" element={<ComingSoonPage />} />
         <Route path="paths" element={<ComingSoonPage />} />
