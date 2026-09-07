@@ -35,7 +35,11 @@ const formatInput = (input) => {
   return String(input)
 }
 
-const SEQUENCE = ['foundations_m1_video_1', 'foundations_m1_l1']
+// Module sequence fallback mapping for offline/guest mode
+const FALLBACK_SEQUENCES = {
+  foundations_module_1: ['foundations_m1_video_1', 'foundations_m1_l1', 'foundations_m1_l2'],
+  foundations_module_2: ['foundations_m2_video_1', 'foundations_m2_l1'],
+}
 
 export default function IDETrainingPage() {
   const { language: langSlug } = useParams()
@@ -45,8 +49,31 @@ export default function IDETrainingPage() {
 
   const meta = LANG_META[langSlug?.toLowerCase()] ?? LANG_META.python
 
+  const [sequence, setSequence] = useState(FALLBACK_SEQUENCES.foundations_module_1)
   const [currentSeqIndex, setCurrentSeqIndex] = useState(0)
-  const problemId = SEQUENCE[currentSeqIndex]
+
+  useEffect(() => {
+    async function loadSequence() {
+      const modId = user?.currentModuleId || 'foundations_module_1'
+      const fallback = FALLBACK_SEQUENCES[modId] || FALLBACK_SEQUENCES.foundations_module_1
+      try {
+        const { doc, getDoc } = await import('firebase/firestore')
+        const { db } = await import('../services/firebase/firebaseConfig.js')
+        const snap = await getDoc(doc(db, 'content/modules/items', modId))
+        if (snap.exists()) {
+          setSequence(snap.data().lessons || fallback)
+        } else {
+          setSequence(fallback)
+        }
+      } catch (err) {
+        console.error('Failed to load module sequence from DB, using fallback:', err)
+        setSequence(fallback)
+      }
+    }
+    loadSequence()
+  }, [user])
+
+  const problemId = sequence[currentSeqIndex] || 'foundations_m1_video_1'
 
   const [questionData, setQuestionData] = useState(null)
   const [activeModal, setActiveModal] = useState(null) // 'reasoning' | 'video' | null
@@ -216,8 +243,18 @@ export default function IDETrainingPage() {
     setSubmissionPassed(false)
     setSubmissionMessage('Initializing sandbox execution environment...')
     
-    const initialCases = (questionData?.tests || []).map((t) => ({
+    // Ensure we have test cases to evaluate
+    let rawTests = questionData?.tests || []
+    if (rawTests.length === 0 && questionData?.expectedOutput) {
+      rawTests = [{ id: 'test_1', input: '', expected: questionData.expectedOutput }]
+    }
+    if (rawTests.length === 0) {
+      rawTests = [{ id: 'test_1', input: '', expected: '' }]
+    }
+
+    const initialCases = rawTests.map((t, i) => ({
       ...t,
+      id: t.id || `test_${i + 1}`,
       status: 'waiting',
       actual: null,
     }))
@@ -250,7 +287,7 @@ export default function IDETrainingPage() {
     }
 
     const assertScript = getTestCodeForProblem(problemId)
-    const runCodeWithTests = `${finalPythonCode}\n\n${assertScript}`
+    const runCodeWithTests = assertScript ? `${finalPythonCode}\n\n${assertScript}` : finalPythonCode
 
     let runResultData = null
     try {
@@ -268,7 +305,8 @@ export default function IDETrainingPage() {
     if (runResultData.errors) {
       failedCaseIndex = 0
       errorMessage = runResultData.errors
-    } else {
+    } else if (assertScript) {
+      // Problem uses hardcoded assertion suite (e.g. two_sum, circular_queue)
       const runPassed = runResultData.passed && runResultData.stdout.includes('ALL TESTS PASSED')
       if (!runPassed) {
         const matchFail = runResultData.stdout.match(/Test case (\d+) failed/)
@@ -280,7 +318,19 @@ export default function IDETrainingPage() {
           errorMessage = lines.find(l => l.includes('failed') || l.includes('exception')) || 'Assertion failed.'
         } else {
           failedCaseIndex = 0
-          errorMessage = 'Exception during execution.'
+          errorMessage = 'Validation failed.'
+        }
+      }
+    } else {
+      // Standard output comparison for generic coding/printing problems
+      const actualStdout = (runResultData.stdout || '').trim()
+      for (let i = 0; i < initialCases.length; i++) {
+        const tc = initialCases[i]
+        const expectedStr = (tc.expected || tc.expectedOutput || '').trim()
+        if (expectedStr && actualStdout !== expectedStr) {
+          failedCaseIndex = i
+          errorMessage = `Expected output:\n"${expectedStr}"\n\nActual output:\n"${actualStdout || '(empty)'}"`
+          break
         }
       }
     }
@@ -291,6 +341,7 @@ export default function IDETrainingPage() {
     const animateNextCase = () => {
       if (currentIdx >= totalCases) {
         // All test cases finished executing and all passed!
+        setSubmissionProgress(100)
         setSubmissionPassed(true)
         setSubmissionIsFinished(true)
         setSubmissionMessage('Success! All verification test cases passed.')
@@ -361,11 +412,8 @@ export default function IDETrainingPage() {
     setSolvedCount(nextSolvedCount)
 
     // 2. Check sequential progression
-    if (problemId === 'linked_list_reversal') {
-      // Show completion progression dialog (Go to challenges, continue training, or return to dashboard)
-      setCompletionDialog(true)
-    } else if (currentSeqIndex + 1 < SEQUENCE.length) {
-      // Move to next question immediately for other questions (e.g. two_sum)
+    if (currentSeqIndex + 1 < sequence.length) {
+      // Move to next question immediately
       setCurrentSeqIndex((idx) => idx + 1)
     } else {
       // Completed all problems in Training Grounds!
@@ -377,7 +425,7 @@ export default function IDETrainingPage() {
 
   const handleForceNextChallenge = () => {
     setSubmissionActive(false)
-    if (currentSeqIndex + 1 < SEQUENCE.length) {
+    if (currentSeqIndex + 1 < sequence.length) {
       setCurrentSeqIndex((idx) => idx + 1)
     } else {
       computeAndSaveSkillVector(userId)
@@ -415,8 +463,8 @@ export default function IDETrainingPage() {
     )
   }
 
-  // ── Blocking Video Modal for Submodule 1 ──
-  if (problemId === 'foundations_m1_video_1' && questionData) {
+  // ── Blocking Video Modal for Video Lessons ──
+  if ((questionData?.type === 'video' || problemId?.includes('_video_')) && questionData) {
     return (
       <div className="flex flex-col h-[calc(100vh-64px)] items-center justify-center bg-black/95 p-6">
         <div className="w-full max-w-4xl p-8 rounded-2xl border border-white/10 bg-[#0a0506]/98 shadow-2xl flex flex-col h-full max-h-[85vh]">
@@ -475,9 +523,9 @@ export default function IDETrainingPage() {
 
         <div className="flex items-center gap-3">
           <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-widest text-ronin-muted">
-            Problem {currentSeqIndex + 1} / {SEQUENCE.length}
+            Problem {currentSeqIndex + 1} / {sequence.length}
           </span>
-          {currentSeqIndex + 1 < SEQUENCE.length && (
+          {currentSeqIndex + 1 < sequence.length && (
             <button
               onClick={() => setShowSkipConfirm(true)}
               className="flex items-center gap-1.5 rounded-lg border border-ronin-gold/20 bg-ronin-gold/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-ronin-gold transition-all hover:bg-ronin-gold/20 hover:text-yellow-400"
@@ -751,7 +799,7 @@ export default function IDETrainingPage() {
                   type="button"
                   onClick={() => {
                     setCompletionDialog(false)
-                    if (currentSeqIndex + 1 < SEQUENCE.length) {
+                    if (currentSeqIndex + 1 < sequence.length) {
                       setCurrentSeqIndex((idx) => idx + 1)
                     }
                   }}
@@ -982,7 +1030,7 @@ export default function IDETrainingPage() {
                   type="button"
                   onClick={() => {
                     setShowSkipConfirm(false)
-                    if (currentSeqIndex + 1 < SEQUENCE.length) {
+                    if (currentSeqIndex + 1 < sequence.length) {
                       setCurrentSeqIndex((idx) => idx + 1)
                     }
                   }}
