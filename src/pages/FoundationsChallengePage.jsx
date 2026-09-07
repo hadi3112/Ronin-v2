@@ -3,8 +3,68 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { fetchChallengeSet } from '../services/firebase/firestoreService.js'
 import NeonButton from '../components/ui/NeonButton.jsx'
 
-export default function FoundationsChallengePage() {
-  const { setId } = useParams()
+const FALLBACK_CHALLENGE_SETS = {
+  cs_foundations_m1: {
+    id: "cs_foundations_m1",
+    moduleId: "foundations_module_1",
+    type: "post_lesson",
+    domains: ["output", "syntax"],
+    questions: [
+      {
+        questionId: "f1_q1",
+        domain: "output",
+        difficulty: 1,
+        type: "application",
+        questionText: "What does this code print?\n\nprint(\"Hello\")\nprint(\"World\")",
+        options: [
+          { id: "a", text: "Hello World" },
+          { id: "b", text: "Hello\nWorld" },
+          { id: "c", text: "HelloWorld" },
+          { id: "d", text: "Nothing" },
+        ],
+        correctOptionId: "b",
+        explanation: "Each print() call outputs on its own line. So 'Hello' appears on line 1 and 'World' on line 2.",
+        tags: ["print", "output", "newline"],
+      },
+      {
+        questionId: "f1_q2",
+        domain: "syntax",
+        difficulty: 1,
+        type: "debugging",
+        questionText: "This code has an error. What is wrong?\n\nprint(Hello)",
+        options: [
+          { id: "a", text: "print should be PRINT" },
+          { id: "b", text: "Hello needs to be in quotes" },
+          { id: "c", text: "Missing semicolon" },
+          { id: "d", text: "Nothing is wrong" },
+        ],
+        correctOptionId: "b",
+        explanation: "In Python, text strings must be enclosed in quotes like \"Hello\" or 'Hello'. Without quotes, Python looks for a variable named Hello.",
+        tags: ["syntax", "strings", "quotes"],
+      },
+      {
+        questionId: "f1_q3",
+        domain: "output",
+        difficulty: 1,
+        type: "conceptual",
+        questionText: "Which function is used in Python to display output to the screen?",
+        options: [
+          { id: "a", text: "display()" },
+          { id: "b", text: "write()" },
+          { id: "c", text: "print()" },
+          { id: "d", text: "output()" },
+        ],
+        correctOptionId: "c",
+        explanation: "The built-in print() function outputs values to the standard output (console).",
+        tags: ["built-ins", "output"],
+      }
+    ]
+  }
+}
+
+export default function FoundationsChallengePage({ defaultSetId = 'cs_foundations_m1' }) {
+  const { setId: paramSetId } = useParams()
+  const setId = paramSetId || defaultSetId
   const navigate = useNavigate()
   
   const [challengeSet, setChallengeSet] = useState(null)
@@ -19,9 +79,14 @@ export default function FoundationsChallengePage() {
     async function load() {
       try {
         const data = await fetchChallengeSet(setId)
-        setChallengeSet(data)
+        if (data) {
+          setChallengeSet(data)
+        } else {
+          setChallengeSet(FALLBACK_CHALLENGE_SETS[setId] || FALLBACK_CHALLENGE_SETS.cs_foundations_m1)
+        }
       } catch (err) {
-        console.error(err)
+        console.error('Error fetching challenge set, using fallback:', err)
+        setChallengeSet(FALLBACK_CHALLENGE_SETS[setId] || FALLBACK_CHALLENGE_SETS.cs_foundations_m1)
       } finally {
         setLoading(false)
       }
