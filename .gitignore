@@ -27,3 +27,6 @@ dist-ssr
 serviceAccountKey.json
 ronin-migration/serviceAccountKey.json
 *.env
+
+# Temporary folders
+Ronin-v2-feat-Firebase-Integration/
