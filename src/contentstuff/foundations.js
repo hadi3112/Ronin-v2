@@ -379,31 +379,25 @@ Each \`print()\` call appears on its own line.`,
     id: "foundations_m1_l2",
     moduleId: "foundations_module_1",
     trackId: "foundations",
-    type: "text",
+    type: "coding",
     lessonNumber: 4,
-    title: "Running Code and Reading Output",
-    conceptName: "console output, error messages, successful runs",
+    title: "Running Code and Reading Errors",
+    conceptName: "console output, error messages, syntax errors",
     estimatedMinutes: 8,
     hasVisualization: false,
     visualizationType: "none",
     isContentReady: true,
+    starterCode: "# FIX THE ERROR: Close the string quote on the line below\nprint('Hello, Ronin!)",
+    tests: [
+      { id: "test_1", description: "Print 'Hello, Ronin!' without syntax errors", expectedOutput: "Hello, Ronin!\n" }
+    ],
     contentMarkdown: `## Running Code and Reading Output
 
-When you click **Run**, Python reads your code from top to bottom and executes each line.
+When you click **Run**, Python reads your code line-by-line. If a line is broken, Python raises an error like:
+\`SyntaxError: EOL while scanning string literal\`
 
-If everything works, you see your output in the console panel below the editor.
-
-If something goes wrong, Python shows an **error message**. Error messages look scary but they always tell you two useful things:
-- What line the problem is on
-- What kind of error it is
-
-\`\`\`
-SyntaxError: EOL while scanning string literal (line 1)
-\`\`\`
-
-This means you opened a string with a quote but never closed it. Fix the quote, run again.
-
-**Key habit:** Read the error message before guessing. The error tells you exactly where to look.`,
+### Your Task
+The starter code below is missing its closing quote on line 2. Fix the error by adding the missing closing quote so it prints \`Hello, Ronin!\` cleanly.`,
   },
   {
     id: "foundations_m1_l3",
