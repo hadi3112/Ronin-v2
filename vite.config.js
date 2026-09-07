@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
       react(),
       isExpo ? viteSingleFile() : null
     ].filter(Boolean),
-    base: './',
+    base: isExpo ? './' : '/',
     build: {
       assetsInlineLimit: isExpo ? 100000000 : 4096,
     }
